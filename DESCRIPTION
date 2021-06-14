@@ -1,0 +1,13 @@
+Package: CL4Eco
+Type: Package
+Title: Composite Likelihood for Ecology
+Version: 0.1.0
+Author: Zhihao Lyu, Xueli Xu, Ximing Xu
+Maintainer: Zhihao Lyu <zlyu@mail.nankai.edu.cn>
+Description: Composite likelihood for ecology, especially in animal individual 
+    identification. Algorithms include maximum composite likelihood estimation(MCLE),
+    model selection as well as generating simulated data.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+URL: https://github.com/Alexhaoge/CL4Eco

@@ -1,0 +1,5 @@
+exportPattern("^[[:alpha:]]+")
+
+importFrom(sampling, srswr)
+import(plyr)
+import(parallel)
