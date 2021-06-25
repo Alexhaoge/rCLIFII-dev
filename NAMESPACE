@@ -1,4 +1,5 @@
 exportPattern("^[[:alpha:]]+")
 
-importFrom(sampling, srswor)
+importFrom(sampling, srswor, srswr)
+importFrom(stats, optim)
 import(parallel)

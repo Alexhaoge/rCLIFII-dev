@@ -26,10 +26,11 @@ move.simulate.A <- function(N, n, t, seed = NULL) {
 #' Simulate animal movement identification data with model B
 #'
 #' @param N Population with the study area
-#' @param lambda migration rate
+#' @param T total time
 #' @param n Number of identification in each observation
 #' @param t Time of each observation if t is a list or array, the number
 #'   of observation if t is an integer.
+#' @param lambda migration rate
 #' @param seed random seed
 #'
 #' @return matrix of N rows and length_t(or t) columns
@@ -67,6 +68,7 @@ move.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
 #'
 #' @param Z Total population of the whole area
 #' @param N Initial population with the study area
+#' @param T total time
 #' @param n Number of identification in each observation
 #' @param t Time of each observation if t is a list or array, the number
 #'   of observation if t is an integer.
@@ -131,7 +133,7 @@ move.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
 #' @export
 #'
 #' @examples
-move.pairwise <- function(data, t = NULL, Time = NULL, tau = TRUE) {
+move.pairwise <- function(data, t = NULL, tau = TRUE) {
   lent <- length(t)
   if (ncol(data) != lent)
     stop("Number of data columns does not match with length of t")
@@ -153,6 +155,23 @@ move.pairwise <- function(data, t = NULL, Time = NULL, tau = TRUE) {
     )
   }
   return(obs)
+}
+
+#' Perform a single bootstrap on the given observation matrix.
+#' A SRSWR will be performed on individuals (row of the matrix)
+#'
+#' @param data Observation matrix. Each row represent an individual
+#'  and each column represent an observation
+#' @param seed random seed
+#'
+#' @return An new observation matrix. Same dims as the input data/
+#' @export
+#'
+#' @examples
+move.bootstrap <- function(data, seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  n <- nrow(data)
+  return(rbind(data[sample(1:n, n, replace=TRUE),]))
 }
 
 move.plotLIR <- function(data, Time, n, t, fun.R.tau, ..., title = NULL) {
