@@ -12,13 +12,13 @@
 #' @export
 #'
 #' @examples
-move.simulate.A <- function(N, n, t, seed = NULL) {
+LIR.simulate.A <- function(N, n, t, seed = NULL) {
   set.seed(seed)
   lent <- ifelse(length(t) == 1, t, length(t))
   if (length(n) == 1)
     data <- replicate(lent, ifelse(srswor(n, N) > 0, 1, 0))
   else if (length(n) == lent)
-    data <- sapply(n, FUN=function(ni){ifelse(srswr(ni, N) > 0, 1, 0)})
+    data <- sapply(n, FUN=function(ni){ifelse(srswor(ni, N) > 0, 1, 0)})
   else stop("Dimension of n does not equal t")
   return(data)
 }
@@ -37,7 +37,7 @@ move.simulate.A <- function(N, n, t, seed = NULL) {
 #' @export
 #'
 #' @examples
-move.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
+LIR.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
   set.seed(seed)
   lent <- length(t)
   if (lent == 1) warning("For model B, t had better be a list")
@@ -80,7 +80,7 @@ move.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
 #' @export
 #'
 #' @examples
-move.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
+LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
   set.seed(seed)
   lent <- length(t)
   if (lent == 1) warning("For model C, t had better be a list")
@@ -128,12 +128,13 @@ move.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
 #'   and column number equal to observation.
 #' @param t List like time of observation. Default NULL, must given if tau is true
 #' @param tau whether return tau
+#' @param n whether return n
 #'
 #' @return List of lagged identification number for each observation pair.
 #' @export
 #'
 #' @examples
-move.pairwise <- function(data, t = NULL, tau = TRUE) {
+LIR.pairwise <- function(data, t = NULL, tau = TRUE, n = TRUE) {
   lent <- length(t)
   if (ncol(data) != lent)
     stop("Number of data columns does not match with length of t")
@@ -154,6 +155,19 @@ move.pairwise <- function(data, t = NULL, tau = TRUE) {
       })
     )
   }
+  if (n) {
+    n <- colSums(data)
+    obs[["ni"]] <- unlist(
+      sapply(1:(lent-1), FUN=function(i) {
+        sapply((i+1):lent, FUN = function(j){n[i]})
+      })
+    )
+    obs[["nj"]] <- unlist(
+      sapply(1:(lent-1), FUN=function(i) {
+        sapply((i+1):lent, FUN = function(j){n[j]})
+      })
+    )
+  }
   return(obs)
 }
 
@@ -168,32 +182,32 @@ move.pairwise <- function(data, t = NULL, tau = TRUE) {
 #' @export
 #'
 #' @examples
-move.bootstrap <- function(data, seed = NULL) {
+LIR.bootstrap <- function(data, seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
   n <- nrow(data)
   return(rbind(data[sample(1:n, n, replace=TRUE),]))
 }
 
-move.plotLIR <- function(data, Time, n, t, fun.R.tau, ..., title = NULL) {
-  # TODO: codes here is slow and need cleaning
-  R.m <- rep(0,Time)
-  R.n <- rep(0,Time)
-  m <- c()
-  tau <- c()
-  k <- 1
-  for (i in 1:(length(t)-1)){
-    for (j in (i+1):length(t)){
-      m[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
-      tau[k] <- t[j]-t[i]
-      R.m[tau[k]] <- R.m[tau[k]] + m[k]
-      R.n[tau[k]] <- n[i]*n[j] + R.n[tau[k]]
-      k <- k + 1
-    }
-  }
-  R.tau <- R.m[tau]/R.n[tau]
-  plot(tau, R.tau,ylim=c(0,0.02) ,ylab="Lagged Identification Rates", xlab="Time lag")
-  y = sapply(seq(Time), function(x){fun.R.tau(x, ...)})
-  lines(y, col='red', lwd=1.5)
-  legend('topright', title)
-}
+# LIR.plotLIR <- function(data, Time, n, t, fun.R.tau, ..., title = NULL) {
+#   # TODO: codes here is slow and need cleaning
+#   R.m <- rep(0,Time)
+#   R.n <- rep(0,Time)
+#   m <- c()
+#   tau <- c()
+#   k <- 1
+#   for (i in 1:(length(t)-1)){
+#     for (j in (i+1):length(t)){
+#       m[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
+#       tau[k] <- t[j]-t[i]
+#       R.m[tau[k]] <- R.m[tau[k]] + m[k]
+#       R.n[tau[k]] <- n[i]*n[j] + R.n[tau[k]]
+#       k <- k + 1
+#     }
+#   }
+#   R.tau <- R.m[tau]/R.n[tau]
+#   plot(tau, R.tau,ylim=c(0,0.02) ,ylab="Lagged Identification Rates", xlab="Time lag")
+#   y = sapply(seq(Time), function(x){fun.R.tau(x, ...)})
+#   lines(y, col='red', lwd=1.5)
+#   legend('topright', title)
+# }
 

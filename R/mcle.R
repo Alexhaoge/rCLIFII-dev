@@ -1,3 +1,7 @@
+
+# Composite Likelihood Function -------------------------------------------
+
+
 #' Composite likelihood for estimating LIR(Lagged Identification Rate)
 #'
 #' This CL function requires a sample format of pairwise lagged identification,
@@ -6,38 +10,100 @@
 #'
 #' This function is recommended when total observation time is very small and
 #' pairwise lagged identification is easy to pre-calculate through
-#' @seealso [move.pairwise()]. The notation of the estimation is \eqn{\hat{R_{tau}}}
+#' @seealso [LIR.pairwise()]. The notation of the estimation is \eqn{\hat{R_{tau}}}
 #'
-#' @param theta Parameter to calculate R_tau
-#' @param model Model to calculate R_tau
-#' @param n Number of individuals at each observation
-#' @param m List of lagged identification for all observation pair
-#' @param ... extra arguments to be passed to model to calculate R_tau
+#' @param theta Parameter to calculate \eqn{\hat{R_{tau}}}
+#' @param model Model to calculate \eqn{\hat{R_{tau}}}
+#' @param ni Number of individuals at each observation
+#' @param nj Number of individuals at each lagged observation
+#' @param m vector of lagged identification for all observation pair
+#' @param tau vector of time interval of lagged identification
+#' @param ... extra arguments to be passed to model to calculate \eqn{\hat{R_{tau}}}
 #'
 #' @return Likelihood score(numeric). Inf if theta out of [0,1]
 #' @export
+#' @rdname CL
+#' @examples
+LIR.CL.pair <- function(theta, model, ni, nj, m, tau, ...) {
+  R_tau <- sapply(tau, function(t){model(theta, t, ...)})
+  if (min(R_tau * nj)<=0) return(Inf);
+  if (max(R_tau * nj)>=1) return(Inf);
+  likelihood <- sum(m * log(R_tau*nj) + (ni-m) * log(1 - R_tau*nj))
+  return(-likelihood)
+}
+
+#' #' @rdname CL
+#' LIR.CL <- function(theta, model, n, data, t, ...) {
+#'
+#' }
+
+
+# Gradient of Composite Likelihood ----------------------------------------
+
+#' Title
+#'
+#' @param theta
+#' @param model
+#' @param grad
+#' @param ni
+#' @param nj
+#' @param m
+#' @param tau
+#' @param ...
+#'
+#' @return
+#' @export
 #'
 #' @examples
-move.CL.pair <- function(theta, model, n, m, ...) {
-  R_tau <- model(theta, ...)
-  if (min(R_tau * n)<=0) return(Inf);
-  if (max(R_tau * n)>=1) return(Inf);
-  object <- sum(m * log(R_tau*n) + (n-m) * log(1 - R_tau*n))
-  return(-object)
+LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, ...) {
+  R_tau <- sapply(tau, function(t){model(theta, t, ...)})
+  R_tau_grad <- t(sapply(tau, function(t){grad(theta, t, ...)}))
+  return(-colSums(R_tau_grad * ((ni - m) * nj / (1 - nj * R_tau) - mj / R_tau)))
 }
 
-#' TODO: undecided
-move.CL <- function() {
 
+# Hessian Matrix of Composite Likelihood ----------------------------------
+
+#' Title
+#'
+#' @param theta
+#' @param model
+#' @param grad
+#' @param hessian
+#' @param ni
+#' @param nj
+#' @param m
+#' @param tau
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, ...) {
+  R_tau <- sapply(tau, function(t) {model(theta, t, ...)})
+  R_tau_grad <- sapply(tau, function(t) {grad(theta, t, ...)})
+  d1 <- dim(R_tau_grad)
+  R_tau_grad2 <-
+    array(apply(ss, 2, function(t) {t %*% t(t)}), dim = c(d1[1], d1[1], d1[2])) *
+    rep((ni - m) * nj^2 / (1 - nj * R_tau)^2 + m / R_tau^2, each=d1[1]*d[1])
+  R_tau_hessian <-
+    sapply(tau, function(t) {hessian(theta, t, ...)}, simplify = 'array') *
+    rep((ni - m) * nj / (1 - nj * R_tau) - m / R_tau, each=d1[1]*d[1])
+  return(-rowSums(R_tau_grad2 + R_tau_hessian, dims = 2))
 }
+
+
+# Maximal Composite Likelihood --------------------------------------------
 
 #' Maximal Composite Likelihood Estimate for pairwise data
 #'
 #' @param theta Initial value for parameters to estimate
-#' @param model Model to calculate R_tau
-#' @param n Number of individuals at each observation
-#' @param m List of lagged identification for all observation pair
-#' @param tau List of time interval of lagged identification
+#' @param model Model to calculate \eqn{\hat{R_{tau}}}
+#' @param ni Number of individuals at each observation
+#' @param nj Number of individuals at each lagged observation
+#' @param m Vector of lagged identification for all observation pair
+#' @param tau Vector of time interval of lagged identification
 #' @param ... Additional parameters passed to model
 #' @param lower Lower bound for estimation
 #' @param upper Upper bound for estimation
@@ -51,10 +117,11 @@ move.CL <- function() {
 #' @export
 #'
 #' @examples
-move.MCLE.pair <-
+LIR.MCLE.pair <-
   function(theta,
            model,
-           n,
+           ni,
+           nj,
            m,
            tau,
            ...,
@@ -63,7 +130,18 @@ move.MCLE.pair <-
            optimizer = NULL,
            opt_arg = list(),
            verbose = FALSE) {
-    clf <- function(theta_) {move.CL.pair(theta_, model = model, n = n, m = m, tau = tau, ...)}
+    clf <-
+      function(theta_) {
+        LIR.CL.pair(
+          theta_,
+          model = model,
+          ni = ni,
+          nj = nj,
+          m = m,
+          tau = tau,
+          ...
+        )
+      }
     if (is.null(optimizer)) {
       opt_res <-
         optim(
@@ -75,7 +153,12 @@ move.MCLE.pair <-
           control = opt_arg
         )
     } else {
-      opt_res <- optimizer(theta, clf, lower = lower, upper = upper, control = opt_arg)
+      opt_res <-
+        optimizer(theta,
+                  clf,
+                  lower = lower,
+                  upper = upper,
+                  control = opt_arg)
     }
     return(ifelse(verbose, opt_res, opt_res$par))
   }
@@ -86,8 +169,7 @@ move.MCLE.pair <-
 #' calculated seperately at every iteration.
 #'
 #' @param theta Initial value for parameters to estimate
-#' @param model Model to calculate R_tau
-#' @param n Number of individuals at each observation
+#' @param model Model to calculate \eqn{\hat{R_{tau}}}
 #' @param data Matrix of observation
 #' @param t Observation time
 #' @param ... Additional parameters passed to model
@@ -103,7 +185,7 @@ move.MCLE.pair <-
 #' @export
 #'
 #' @examples
-move.MCLE <-
+LIR.MCLE <-
   function(theta,
            model,
            data,
@@ -119,12 +201,13 @@ move.MCLE <-
       stop("Number of observation not match(data & t)")
     n <- colSums(data != 0)
     if (lent <= 20000) {
-      obs <- move.pairwise(data = data, t = t, tau = TRUE)
+      obs <- LIR.pairwise(data = data, t = t, tau = TRUE)
       return(
-        move.MCLE.pair(
+        LIR.MCLE.pair(
           theta,
           model,
-          n,
+          obs$ni,
+          obs$nj,
           obs$m,
           obs$tau,
           ...,
@@ -136,65 +219,75 @@ move.MCLE <-
         )
       )
     } else {
+      stop('Too much observation')
       # TODO: undecided
     }
   }
 
-move.CI(theta, model, data, t, ..., B = 500, cl = NULL, ncore = -1) {
-  if (!is.integer(B) || B <= 0) stop("B must be a positive integer")
-  if (is.null(cl)) {
-    if (ncore == -1) ncore <- detectCores()
-    else if (!is.integer(ncore) || ncore <= 0)
-      stop("ncore must be a positive integer")
-    cl <- makeCluster(ncore)
-  } else if (!is(cl, 'cluster')) {
-    stop('cl must be a cluster')
-  }
-  theta_MCLE <- parSapply(cl, 0:B, function(id) {
-    if (id == 0) {
-      return(move.MCLE(theta, model, data, t, ..., verbose = FALSE))
-    } else {
-      data_bootstrap <- move.bootstrap()
-    }
-  })
 
-}
+# Confidence Interval -----------------------------------------------------
 
-#' LIR model A. The population is constant and no migrations occur.
+#' Confidence interval for LIR MCLE
+#' Estimate of LIR using MCLE is asymptotically normal so here bootstrap is applied to estimate the variance.
 #'
-#' @param theta here theta is the estimated LIR(R_tau) directly
-#' @param tau List of time interval of lagged identification
-#'
-#' @return rep(theta, length(tau))
-#' @export
-#'
-#' @examples
-move.model.A <- function(theta, tau) {
-  return(rep(theta, length(tau)))
-}
-
-#' LIR model B.
-#'
-#' @param theta (\eqn{\alpha, \beta})
-#' @param tau List of time interval of lagged identification
-#'
-#' @return List of estimated R_tau
-#' @export
-#'
-#' @examples
-move.model.B <- function(theta, tau) {
-  return(theta[1] * exp(-theta[2]*tau))
-}
-
-#' LIR model C.
-#'
-#' @param theta (\eqn{\gamma, \beta, \alpha})
-#' @param tau List of time interval of lagged identification
+#' @param theta initial value of estimate for MCLE iteration
+#' @param model Model to calculate \eqn{\hat{R_{tau}}}
+#' @param data Matrix of observation
+#' @param t Observation time
+#' @param ...
+#' @param B Bootstrap's repeat sampling times
+#' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
+#' @param ncore Number of processors to use. Default -1(which means all available cores).
+#'   This argument will be suppressed if cl is not NULL.
+#' @param alpha Confidence level. Default 0.05.
 #'
 #' @return
 #' @export
 #'
 #' @examples
-move.model.C <- function(theta, tau) {
-  return(theta[1]*exp(-theta[2]*tau) + theta[3])
-}
+LIR.CI <-
+  function(theta,
+           model,
+           data,
+           t,
+           ...,
+           B = 500,
+           cl = NULL,
+           ncore = -1,
+           alpha = 0.05) {
+    if (!is.integer(B) || B <= 0)
+      stop("B must be a positive integer")
+    clusterNotGiven <- FALSE
+    if (is.null(cl)) {
+      clusterNotGiven <- TRUE
+      if (ncore == -1)
+        ncore <- detectCores()
+      else if (!is.integer(ncore) || ncore <= 0)
+        stop("ncore must be a positive integer")
+      cl <- makeCluster(ncore)
+    } else if (!is(cl, 'cluster')) {
+      stop('cl must be a cluster')
+    }
+    theta_MCLE <- parSapply(cl, 0:B, function(id) {
+      if (id == 0) {
+        return(LIR.MCLE(theta, model, data, t, ..., verbose = FALSE))
+      } else {
+        data_bootstrap <- LIR.bootstrap(data)
+        return(LIR.MCLE(theta, model, data_bootstrap, t, ..., verbose = FALSE))
+      }
+    })
+    if (clusterNotGiven) stopCluster(cl)
+    if (!is.numeric(alpha) || alpha <= 0 || alpha >= 1)
+      stop("Confidence level should between 0 and 1(exclusive), usually a small value like 0.05")
+    z <- qnorm(1 - alpha / 2)
+    if (length(theta) == 1) {
+      std <- var(theta_MCLE[-1])
+      return(c(theta_MCLE[1] - z * std, theta_MCLE[1] + z * std))
+    } else {
+      std <- sqrt(diag(var(t(theta_MCLE[,-1]))))
+      ci <- rbind(theta_MCLE[, 1] - z * std, theta_MCLE[, 1] + z * std)
+      colnames(ci) <- c('lower', 'upper')
+      return(ci)
+    }
+  }
+
