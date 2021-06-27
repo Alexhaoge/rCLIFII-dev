@@ -3,6 +3,10 @@ Type: Package
 Title: Composite Likelihood for Ecology
 Version: 0.1.0
 Author: Xueli Xu, Zhihao Lyu, Ximing Xu
+Author@R: c(
+  person("Xueli", "Xu", rol = "aut"),
+  person("Zhihao", "Lyu", email = "zlyu@mail.nankai.edu.cn", rol = c("cre", "aut")),
+  person("Ximing", "Xu", rol = "aut"))
 Maintainer: Zhihao Lyu <zlyu@mail.nankai.edu.cn>
 Description: Composite likelihood for ecology, especially in animal individual 
     identification. Algorithms include maximum composite likelihood estimation(MCLE),
@@ -11,8 +15,13 @@ License: MIT
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/Alexhaoge/CL4Eco
-Roxygen: list(markdown = TRUE)
+BugReports: https://github.com/Alexhaoge/CL4Eco/issues
+Roxygen: list(markdown = FALSE)
 RoxygenNote: 7.1.1
+Imports:
+    stats,
+    parallel,
+    sampling
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

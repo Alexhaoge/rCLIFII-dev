@@ -1,42 +1,57 @@
 
-#' Simulate animal movement identification data with model A
-#' Population is constant and no migration.
+#' @name LIR.simulate.A/B/C
+#' @title Simulate animal movement identification data with model A/B/C
 #'
-#' @param N population
-#' @param n number of observed individual at each moment. List or integer
-#' @param t Time of each observation if t is a list or array, the number
+#' @param Z Total population of the whole area.(Only for model C)
+#' @param N Population within the study area.(For model C, the initial population)
+#' @param T total time
+#' @param n Number of identification in each observation
+#' @param t Time of each observation if t is a list or array, otherwise the number
 #'   of observation if t is an integer.
+#' @param lambda move-out rate
+#' @param mu move-in rate
 #' @param seed random seed
 #'
-#' @return 0-1 identification matrix of N rows and length_t(or t) columns
+#' @details
+#' In model A, it is assumed that no migration occurs and population N remains constant.
+#'
+#' In model B, move-in rate equals to move-out rate so the population remains constant.
+#' Note that migration in this model is permanent, so animals previously move out(or dead)
+#' will not return.
+#'
+#' In model C, animals in the study area move out with probability of \eqn{\lambda} per
+#' unit time and move in with probability of \eqn{\mu} per unit time. The population of the
+#' whole area T is assumed to be constant. If \eqn{\lambda = \frac{\mu (Z-N)}{N}}, the
+#' population within the study has an expectation of N, otherwise a warning will
+#' be raised.
+#'
+#' @return matrix of length(t) columns. The number of rows is N for model A/B,
+#' Z for model C.
 #' @export
+#' @rdname simulate
 #'
 #' @examples
+#' # Example of data simulation
+#' # Set observation time
+#' t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
+#' # Generate observation matrix with model C
+#' data <- move.simulate.C(T=300, N=100, T=605, n=40, t=t, lambda=0.08, mu=0.04)
+#' dim(data)
+#' # [1] 300  25
+#'
 LIR.simulate.A <- function(N, n, t, seed = NULL) {
   set.seed(seed)
   lent <- ifelse(length(t) == 1, t, length(t))
   if (length(n) == 1)
-    data <- replicate(lent, ifelse(srswor(n, N) > 0, 1, 0))
+    data <- replicate(lent, (sampling::srswor(n, N) > 0) * 1)
   else if (length(n) == lent)
-    data <- sapply(n, FUN=function(ni){ifelse(srswor(ni, N) > 0, 1, 0)})
+    data <- sapply(n, FUN=function(ni){(sampling::srswor(ni, N) > 0) * 1})
   else stop("Dimension of n does not equal t")
   return(data)
 }
 
-#' Simulate animal movement identification data with model B
-#'
-#' @param N Population with the study area
-#' @param T total time
-#' @param n Number of identification in each observation
-#' @param t Time of each observation if t is a list or array, the number
-#'   of observation if t is an integer.
-#' @param lambda migration rate
-#' @param seed random seed
-#'
-#' @return matrix of N rows and length_t(or t) columns
+#' @rdname simulate
 #' @export
-#'
-#' @examples
 LIR.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
   set.seed(seed)
   lent <- length(t)
@@ -49,14 +64,14 @@ LIR.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
   j <- 1
   t <- sort(t)
   if (1 == t[j]) {
-    data[, 1] <- pop * (srswor(n[1], N) > 0)
+    data[, 1] <- pop * (sampling::srswor(n[1], N) > 0)
     j <- j + 1
   }
   for (i in 2:T) {
     unif <- runif(N, 0, 1)
     pop <- (unif <= lambda) * unif + pop
     if (t[j] == i) {
-      data[, j] <- pop * (srswor(n[j], N) > 0)
+      data[, j] <- pop * (sampling::srswor(n[j], N) > 0)
       j <- j + 1
       if (j > lent) break
     }
@@ -64,22 +79,8 @@ LIR.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
   return(data)
 }
 
-#' Simulate animal movement identification data with model C
-#'
-#' @param Z Total population of the whole area
-#' @param N Initial population with the study area
-#' @param T total time
-#' @param n Number of identification in each observation
-#' @param t Time of each observation if t is a list or array, the number
-#'   of observation if t is an integer.
-#' @param lambda move out rate
-#' @param mu move in rate
-#' @param seed random seed
-#'
-#' @return matrix of Z rows and length(t) columns
+#' @rdname simulate
 #' @export
-#'
-#' @examples
 LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
   set.seed(seed)
   lent <- length(t)
@@ -121,8 +122,9 @@ LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
   return(data)
 }
 
-#' Calculate lagged identification of each observation pair.
-#' Number of observation is guessed by the column number of input matrix
+#' @title Calculate lagged identification of each observation pair.
+#' @description
+#' Calculate lagged identification of each observation pair. Number of observation is guessed by the column number of input matrix
 #'
 #' @param data Matrix of identification with row number equal to population
 #'   and column number equal to observation.
@@ -171,8 +173,11 @@ LIR.pairwise <- function(data, t = NULL, tau = TRUE, n = TRUE) {
   return(obs)
 }
 
+#' @title Bootstrap on individuals
+#'
+#' @description
 #' Perform a single bootstrap on the given observation matrix.
-#' A SRSWR will be performed on individuals (row of the matrix)
+#' SRSWR will be performed on individuals (row of the matrix)
 #'
 #' @param data Observation matrix. Each row represent an individual
 #'  and each column represent an observation

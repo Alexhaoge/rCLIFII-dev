@@ -1,42 +1,83 @@
-#' LIR model A. The population is constant and no migrations occur.
+#' @name LIR.model.A/B/C
+#' @title LIR model A/B/C
 #'
-#' @param theta here theta is the estimated LIR(R_tau) directly
-#' @param tau List of time interval of lagged identification
+#' @description
+#' A: \eqn{R_{\tau}=\alpha, \theta=\alpha=1/N}
 #'
-#' @return rep(theta, length(tau))
+#' B: \eqn{R_{\tau}=\alpha e^{-\beta\tau}, \theta=c(\alpha, \beta)=c(1/N, \lambda)}
+#'
+#' C: \eqn{R_{\tau}=\gamma e^{-\beta\tau}+\alpha, \theta=c(\gamma, \beta, \alpha)=c(\frac{\lambda}{(\lambda+\mu)N}, \lambda+\mu, \frac{\mu}{(\lambda+\mu)N})}
+#'
+#' @param theta Parameter to estimate.
+#' @param tau Lagged time \eqn{\tau}.
+#'
+#' @details
+#' In model A, it is assumed that no migration occurs and population N remains constant.
+#'
+#' In model B, move-in rate equals to move-out rate so the population remains constant.
+#' Note that migration in this model is permanent, so animals previously move out(or dead)
+#' will not return.
+#'
+#' In model C, animals in the study area move out with probability of \eqn{\lambda} per
+#' unit time and move in with probability of \eqn{\mu} per unit time. The population of the
+#' whole area T is assumed to be constant. If \eqn{\lambda = \frac{\mu (Z-N)}{N}}, the
+#' population within the study has an expectation of N, otherwise a warning will
+#' be raised.
+#'
+#' @return \eqn{R_{\tau}}
+#' @rdname model
 #' @export
 #'
 #' @examples
-LIR.model.A <- function(theta, tau) {
+LIR.model.A <- function(theta, tau, ...) {
   return(theta)
 }
 
-LIR.grad.A <- function(theta, tau) {
+#' @name LIR.grad.A/B/C
+#' @title Gradient of model A/B/C
+#'
+#' @param theta Parameter to estimate.
+#' @param tau Lagged time \eqn{\tau}.
+#'
+#' @return vector
+#' @export
+#' @rdname grad
+#'
+#' @examples
+LIR.grad.A <- function(theta, tau, ...) {
   return(c(1))
 }
 
-LIR.hessian.A <- function(theta, tau) {
-  return(matrix(0, nrow = 1, ncol = 1))
-}
-
-#' LIR model B.
+#' @name LIR.hessian.A/B/C
+#' @title Hessian matrix of model A/B/C
 #'
-#' @param theta (\eqn{\alpha, \beta})
-#' @param tau List of time interval of lagged identification
+#' @param theta Parameter to estimate.
+#' @param tau Lagged time \eqn{\tau}.
 #'
-#' @return List of estimated R_tau
+#' @return A symmetric matrix.
+#' @rdname hessian
 #' @export
 #'
 #' @examples
-LIR.model.B <- function(theta, tau) {
+LIR.hessian.A <- function(theta, tau, ...) {
+  return(matrix(0, nrow = 1, ncol = 1))
+}
+
+#' @rdname model
+#' @export
+LIR.model.B <- function(theta, tau, ...) {
   return(theta[1] * exp(-theta[2]*tau))
 }
 
-LIR.grad.B <- function(theta, tau) {
+#' @rdname grad
+#' @export
+LIR.grad.B <- function(theta, tau, ...) {
   return(c(1, -theta[1] * tau) * exp(-theta[2]*tau))
 }
 
-LIR.hessian.B <- function(theta, tau) {
+#' @rdname hessian
+#' @export
+LIR.hessian.B <- function(theta, tau, ...) {
   return(matrix(
     c(0, -tau, -tau, theta[1] * tau^2) * exp(-theta[2] * tau),
     nrow = 2,
@@ -44,24 +85,20 @@ LIR.hessian.B <- function(theta, tau) {
   ))
 }
 
-#' LIR model C.
-#'
-#' @param theta (\eqn{\gamma, \beta, \alpha})
-#' @param tau List of time interval of lagged identification
-#'
-#' @return
+#' @rdname model
 #' @export
-#'
-#' @examples
-LIR.model.C <- function(theta, tau) {
+LIR.model.C <- function(theta, tau, ...) {
   return(theta[1]*exp(-theta[2]*tau) + theta[3])
 }
 
-LIR.grad.C <- function(theta, tau) {
+#' @rdname grad
+#' @export
+LIR.grad.C <- function(theta, tau, ...) {
   return(c(exp(-theta[2]*tau), -theta[1] * tau * exp(-theta[2]*tau), 1))
 }
 
-LIR.hessian.C <- function(theta, tau) {
+#' @rdname hessian
+LIR.hessian.C <- function(theta, tau, ...) {
   return(matrix(
     c(0, -tau, 0, -tau, theta[1] * tau^2, 0, 0, 0, 0) * exp(-theta[2] * tau),
     nrow = 3,
