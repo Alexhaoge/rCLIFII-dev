@@ -4,17 +4,17 @@
 \alias{LIR.pairwise}
 \title{Calculate lagged identification of each observation pair.}
 \usage{
-LIR.pairwise(data, t = NULL, tau = TRUE, n = TRUE)
+LIR.pairwise(data, tp = NULL, require_tau = TRUE, require_n = TRUE)
 }
 \arguments{
 \item{data}{Matrix of identification with row number equal to population
 and column number equal to observation.}
 
-\item{t}{List like time of observation. Default NULL, must given if tau is true}
+\item{tp}{List like time of observation. Default NULL, must given if tau is true}
 
-\item{tau}{whether return tau}
+\item{require_tau}{If true, return tau}
 
-\item{n}{whether return n}
+\item{require_n}{If true, return n}
 }
 \value{
 List of lagged identification number for each observation pair.

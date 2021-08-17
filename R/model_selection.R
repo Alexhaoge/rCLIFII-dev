@@ -18,10 +18,8 @@
 #'
 #' @description
 #' `LIR.AIC.pair` is for AIC with pairwise data.
-#' `LIR.BIC.pair` is for BIC with pairwise data.
 #' `LIR.QAIC.pair` is for QIC with pairwise data.
 #' \deqn{AIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}+2k}
-#' \deqn{BIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}+k ln(T)}
 #' \deqn{QAIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}/\hat{c}+2k}
 #' Here \eqn{k} is `length(theta)`, T is total study time, \eqn{\hat{c}} is the
 #' variance inflation factor estimated from the ratio of the goodness-of-fit
@@ -37,7 +35,6 @@
 #' @param nj Number of individuals at each lagged observation
 #' @param m Vector of lagged identification for all observation pair
 #' @param tau Vector of time interval of lagged identification
-#' @param T Total study time. Required for BIC.
 #' @param ... Additional parameters passed to model, or upper/lower bound and optimize
 #' argument when calculating MCLE.
 #' @param MCLE If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
@@ -52,15 +49,15 @@ LIR.AIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
   return(.LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE) + 2 * length(theta))
 }
 
-#' @rdname AICBICQAIC
-#' @export
-LIR.BIC.pair <- function(theta, model, ni, nj, m, tau, `T`, ..., MCLE = FALSE) {
-  return(.LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE) + length(theta) * log(`T`))
-}
+
+# LIR.BIC.pair <- function(theta, model, ni, nj, m, tau, `T`, ..., MCLE = FALSE) {
+#   return(.LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE) + length(theta) * log(`T`))
+# }
 
 #' @rdname AICBICQAIC
 #' @export
 LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
+  # NOTE: df需要使用参数最多的
   cl <- .LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE)
   tab <- table(tau)
   ltab <- tab
@@ -98,8 +95,8 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
            MCLE = FALSE,
            B = 500,
            cl = NULL,
-           ncore = -1) {
-    obs <- LIR.pairwise(data, t, tau = TRUE, n = TRUE)
+           ncores = -1) {
+    obs <- LIR.pairwise(data, t, require_tau = TRUE, require_n = TRUE)
     if (MCLE) {
       clh <-
         2 * LIR.CL.pair(theta, model, obs$ni, obs$nj, obs$m, obs$tau, ...)
@@ -115,11 +112,11 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
     clusterNotGiven <- FALSE
     if (is.null(cl)) {
       clusterNotGiven <- TRUE
-      if (ncore == -1)
-        ncore <- parallel::detectCores()
-      else if (!is.integer(ncore) || ncore <= 0)
-        stop("ncore must be a positive integer")
-      cl <- parallel::makeCluster(ncore)
+      if (ncores == -1)
+        ncores <- parallel::detectCores()
+      else if (!is.integer(ncores) || ncores <= 0)
+        stop("ncores must be a positive integer")
+      cl <- parallel::makeCluster(ncores)
     } else if (!is(cl, 'cluster')) {
       stop('cl must be a cluster')
     }
@@ -170,7 +167,7 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 #' the initial value for optimizer. Boolean, default FALSE.
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
-#' @param ncore Number of processors to use. Default -1(which means all available cores).
+#' @param ncores Number of processors to use. Default -1(which means all available cores).
 #' This argument will be suppressed if cl is not NULL.
 #' @param `T` Total study time. Required for CLICb.
 #'
@@ -180,7 +177,7 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 #'
 #' @example
 LIR.CLICa <-
-  function(theta, model, grad, hessian, data, t, ..., MCLE = FALSE, B = 500, cl = NULL, ncore = -1) {
+  function(theta, model, grad, hessian, data, t, ..., MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
     tmp <-
       .LIR.CLICbase(
         theta,
@@ -193,7 +190,7 @@ LIR.CLICa <-
         MCLE = MCLE,
         B = B,
         cl = cl,
-        ncore = ncore
+        ncores = ncores
       )
     return(tmp[1] + 2 * tmp[2])
   }
@@ -212,7 +209,7 @@ LIR.CLICb <-
            MCLE = FALSE,
            B = 500,
            cl = NULL,
-           ncore = -1) {
+           ncores = -1) {
     tmp <-
       .LIR.CLICbase(
         theta,
@@ -225,7 +222,7 @@ LIR.CLICb <-
         MCLE = MCLE,
         B = B,
         cl = cl,
-        ncore = ncore
+        ncores = ncores
       )
     return(tmp[1] + log(`T`) * tmp[2])
   }
@@ -237,7 +234,7 @@ LIR.CLICb <-
 #'
 #' @description
 #' List of model should be provided and a specific criterion among
-#' AIC/BIC/QAIC/CLICa/CLICb should be assigned. This function will calculate
+#' AIC/QAIC/CLICa/CLICb should be assigned. This function will calculate
 #' score of each model with the given criterion and select the model with highest
 #' score as the best one.
 #'
@@ -264,10 +261,9 @@ LIR.CLICb <-
 #' argument when calculating MCLE.
 #' @param MCLE If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
 #' the initial value for optimizer. Boolean, default FALSE.
-#' @param `T` Total study time. Required for CLICb and BIC.
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
-#' @param ncore Number of processors to use. Default -1(which means all available cores).
+#' @param ncores Number of processors to use. Default -1(which means all available cores).
 #'   This argument will be suppressed if cl is not NULL.
 #' @param verbose Whether return verbose output. Default TRUE.
 #'
@@ -314,13 +310,10 @@ LIR.modelSelect <-
            criterion = 'CLICa',
            ...,
            MCLE = FALSE,
-           `T` = NULL,
            B = 500,
            cl = NULL,
-           ncore = -1,
+           ncores = -1,
            verbose = TRUE) {
-    if ((criterion == 'CLICb' || criterion == 'BIC') && is.null(`T`))
-      stop("Total time `T` is needed for BIC/CLICb")
     lenf <- length(model_list)
     if (lenf != length(theta_list))
       stop("Theta list should have same length with model_list")
@@ -338,15 +331,11 @@ LIR.modelSelect <-
         fun_list[i] <- model_list[i]
     }
     score <- c()
-    if (criterion %in% c('AIC', 'BIC', 'QAIC')) {
-      obs <- LIR.pairwise(data, t, tau = TRUE, n = TRUE)
+    if (criterion %in% c('AIC', 'QAIC')) {
+      obs <- LIR.pairwise(data, t, require_tau = TRUE, require_n = TRUE)
       if (criterion == 'AIC') {
         for(i in 1:lenf) {
           score[i] <- LIR.AIC.pair(theta_list[[i]], as.function(fun_list[[i]]), obs$ni, obs$nj, obs$m, obs$tau, ..., MCLE)
-        }
-      } else if (criterion == 'BIC') {
-        for(i in 1:lenf) {
-          score[i] <- LIR.BIC.pair(theta_list[[i]], as.function(fun_list[[i]]), obs$ni, obs$nj, obs$m, obs$tau, `T`, ..., MCLE)
         }
       } else {
         for(i in 1:lenf) {
@@ -388,7 +377,7 @@ LIR.modelSelect <-
               MCLE = MCLE,
               B = B,
               cl = cl,
-              ncore = ncore
+              ncores = ncores
             )
         }
       } else {
@@ -406,7 +395,7 @@ LIR.modelSelect <-
               MCLE = MCLE,
               B = B,
               cl = cl,
-              ncore = ncore
+              ncores = ncores
             )
         }
       }

@@ -4,10 +4,9 @@
 #'
 #' @param Z Total population of the whole area.(Only for model C)
 #' @param N Population within the study area.(For model C, the initial population)
-#' @param T total time
 #' @param n Number of identification in each observation
-#' @param t Time of each observation if t is a list or array, otherwise the number
-#'   of observation if t is an integer.
+#' @param tp Time of each observation if tp is a list or array, otherwise the number
+#'   of observation if t is an integer. Model B and C require tp to be a list.
 #' @param lambda move-out rate
 #' @param mu move-in rate
 #' @param seed random seed
@@ -35,13 +34,13 @@
 #' # Set observation time
 #' t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 #' # Generate observation matrix with model C
-#' data <- move.simulate.C(T=300, N=100, T=605, n=40, t=t, lambda=0.08, mu=0.04)
+#' data <- move.simulate.C(T=300, N=100, n=40, tp=t, lambda=0.08, mu=0.04)
 #' dim(data)
 #' # [1] 300  25
 #'
-LIR.simulate.A <- function(N, n, t, seed = NULL) {
+LIR.simulate.A <- function(N, n, tp, seed = NULL) {
   set.seed(seed)
-  lent <- ifelse(length(t) == 1, t, length(t))
+  lent <- ifelse(length(tp) == 1, tp, length(tp))
   if (length(n) == 1)
     data <- replicate(lent, (sampling::srswor(n, N) > 0) * 1)
   else if (length(n) == lent)
@@ -52,25 +51,27 @@ LIR.simulate.A <- function(N, n, t, seed = NULL) {
 
 #' @rdname simulate
 #' @export
-LIR.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
+LIR.simulate.B <- function(N, n, tp, lambda, seed = NULL) {
   set.seed(seed)
-  lent <- length(t)
-  if (lent == 1) warning("For model B, t had better be a list")
-  if (length(n) > 1 && length(n) != lent)
+  lent <- length(tp)
+  if (lent == 1)
+    stop("For model B, t must be a list")
+  else if (length(n) > 1 && length(n) != lent)
     stop("Dimension of n does not equal t")
   if (length(n == 1)) n = rep(n, lent)
   data <- matrix(nrow = N, ncol = lent)
-  pop <- seq(N)
+  pop <- rep(1, N)
   j <- 1
-  t <- sort(t)
-  if (1 == t[j]) {
+  tp <- sort(tp)
+  if (1 == tp[j]) {
     data[, 1] <- pop * (sampling::srswor(n[1], N) > 0)
     j <- j + 1
   }
-  for (i in 2:T) {
+  tT <- tp[lent]
+  for (i in 2:tT) {
     unif <- runif(N, 0, 1)
-    pop <- (unif <= lambda) * unif + pop
-    if (t[j] == i) {
+    pop <- (unif <= lambda) + pop
+    if (tp[j] == i) {
       data[, j] <- pop * (sampling::srswor(n[j], N) > 0)
       j <- j + 1
       if (j > lent) break
@@ -81,10 +82,11 @@ LIR.simulate.B <- function(N, T, n, t, lambda, seed = NULL) {
 
 #' @rdname simulate
 #' @export
-LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
+LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
   set.seed(seed)
-  lent <- length(t)
-  if (lent == 1) warning("For model C, t had better be a list")
+  lent <- length(tp)
+  if (lent == 1)
+    stop("For model C, t must be a list")
   if (length(n) > 1 && length(n) != lent)
     stop("Dimension of n does not equal t")
   if (length(n == 1)) n = rep(n, lent)
@@ -95,12 +97,13 @@ LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
   pop_in <- seq(N)
   pop_out <- seq(N+1, Z)
   j <- 1
-  t <- sort(t)
-  if (1 == t[j]) {
+  tp <- sort(tp)
+  if (1 == tp[j]) {
     data[sample(pop_in, n[1]), 1] <- 1
     j <- j + 1
   }
-  for (i in 2:T) {
+  tT <- tp[lent]
+  for (i in 2:tT) {
     unif_in <- runif(length(pop_in))
     unif_out <- runif(length(pop_out))
     pop_in_new <- c(
@@ -113,7 +116,7 @@ LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
     )
     pop_in <- pop_in_new
     pop_out <- pop_out_new
-    if (i == t[j]) {
+    if (i == tp[j]) {
       data[sample(pop_in, n[j]), j] <- 1
       j <- j + 1
       if (j > lent) break
@@ -128,16 +131,16 @@ LIR.simulate.C <- function(Z, N, T, n, t, lambda, mu, seed = NULL) {
 #'
 #' @param data Matrix of identification with row number equal to population
 #'   and column number equal to observation.
-#' @param t List like time of observation. Default NULL, must given if tau is true
-#' @param tau whether return tau
-#' @param n whether return n
+#' @param tp List like time of observation. Default NULL, must given if tau is true
+#' @param require_tau If true, return tau
+#' @param require_n If true, return n
 #'
 #' @return List of lagged identification number for each observation pair.
 #' @export
 #'
 #' @examples
-LIR.pairwise <- function(data, t = NULL, tau = TRUE, n = TRUE) {
-  lent <- length(t)
+LIR.pairwise <- function(data, tp = NULL, require_tau = TRUE, require_n = TRUE) {
+  lent <- length(tp)
   if (ncol(data) != lent)
     stop("Number of data columns does not match with length of t")
   obs  <- list()
@@ -148,16 +151,16 @@ LIR.pairwise <- function(data, t = NULL, tau = TRUE, n = TRUE) {
       })
     })
   )
-  if (tau) {
-    if (is.null(t))
+  if (require_tau) {
+    if (is.null(tp))
       stop("No observation time provided to calculate tau")
     obs[["tau"]] <- unlist(
       sapply(1:(lent-1), FUN=function(i) {
-        sapply((i+1):lent, FUN = function(j){return(t[j] - t[i])})
+        sapply((i+1):lent, FUN = function(j){return(tp[j] - tp[i])})
       })
     )
   }
-  if (n) {
+  if (require_n) {
     n <- colSums(data)
     obs[["ni"]] <- unlist(
       sapply(1:(lent-1), FUN=function(i) {
@@ -171,6 +174,53 @@ LIR.pairwise <- function(data, t = NULL, tau = TRUE, n = TRUE) {
     )
   }
   return(obs)
+}
+
+
+#' Non-parametric estimation of LIR
+#'
+#' @param data
+#' @param n
+#' @param tp
+#'
+#' @return
+#' @export
+#'
+#' @examples
+non.lir <- function(data, n, tp) {
+
+
+  lent <- length(tp)
+  tp <- sort(tp)
+  tT <- tp[lent]
+
+  R.m <- rep(0, tT)
+  R.n <- rep(0, tT)
+  mij <- c()
+  nij <- c()
+  tauij <- c()
+
+  k <- 1
+  for (i in 1:(lent-1)){
+    for (j in (i+1):lent){
+      mij[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
+      nij[k] <- n[i]*n[j]
+      tauij[k] <- tp[j] - tp[i]
+      R.m[tauij[k]] <- R.m[tauij[k]] + mij[k]
+      R.n[tauij[k]] <- n[i]*n[j] + R.n[tauij[k]]
+      k <- k + 1
+    }
+
+  }
+
+  R.tauij <- R.m[tauij]/R.n[tauij]
+  tau <- unique(tauij)
+  R.tau <- R.m[tau]/R.n[tau]
+
+  R.dat <- list(R.tau=R.tau, tau=tau, R.m=R.m, R.n=R.n,
+                mij=mij, nij=nij, tauij=tauij)
+
+  return(R.dat)
 }
 
 #' @title Bootstrap on individuals

@@ -3,15 +3,12 @@
 \name{LIR.XIC.pair}
 \alias{LIR.XIC.pair}
 \alias{LIR.AIC.pair}
-\alias{LIR.BIC.pair}
 \alias{LIR.QAIC.pair}
 \title{Other model selection criterion(AIC/BIC/QAIC)
 
 Not recommended for composite likelihood model.}
 \usage{
 LIR.AIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = FALSE)
-
-LIR.BIC.pair(theta, model, ni, nj, m, tau, T, ..., MCLE = FALSE)
 
 LIR.QAIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = FALSE)
 }
@@ -37,18 +34,14 @@ argument when calculating MCLE.}
 
 \item{MCLE}{If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
 the initial value for optimizer. Boolean, default FALSE.}
-
-\item{T}{Total study time. Required for BIC.}
 }
 \value{
 score
 }
 \description{
 `LIR.AIC.pair` is for AIC with pairwise data.
-`LIR.BIC.pair` is for BIC with pairwise data.
 `LIR.QAIC.pair` is for QIC with pairwise data.
 \deqn{AIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}+2k}
-\deqn{BIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}+k ln(T)}
 \deqn{QAIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}/\hat{c}+2k}
 Here \eqn{k} is `length(theta)`, T is total study time, \eqn{\hat{c}} is the
 variance inflation factor estimated from the ratio of the goodness-of-fit

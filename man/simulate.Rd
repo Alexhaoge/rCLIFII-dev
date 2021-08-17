@@ -7,23 +7,21 @@
 \alias{LIR.simulate.C}
 \title{Simulate animal movement identification data with model A/B/C}
 \usage{
-LIR.simulate.A(N, n, t, seed = NULL)
+LIR.simulate.A(N, n, tp, seed = NULL)
 
-LIR.simulate.B(N, T, n, t, lambda, seed = NULL)
+LIR.simulate.B(N, n, tp, lambda, seed = NULL)
 
-LIR.simulate.C(Z, N, T, n, t, lambda, mu, seed = NULL)
+LIR.simulate.C(Z, N, n, tp, lambda, mu, seed = NULL)
 }
 \arguments{
 \item{N}{Population within the study area.(For model C, the initial population)}
 
 \item{n}{Number of identification in each observation}
 
-\item{t}{Time of each observation if t is a list or array, otherwise the number
-of observation if t is an integer.}
+\item{tp}{Time of each observation if tp is a list or array, otherwise the number
+of observation if t is an integer. Model B and C require tp to be a list.}
 
 \item{seed}{random seed}
-
-\item{T}{total time}
 
 \item{lambda}{move-out rate}
 
@@ -56,7 +54,7 @@ be raised.
 # Set observation time
 t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 # Generate observation matrix with model C
-data <- move.simulate.C(T=300, N=100, T=605, n=40, t=t, lambda=0.08, mu=0.04)
+data <- move.simulate.C(T=300, N=100, n=40, tp=t, lambda=0.08, mu=0.04)
 dim(data)
 # [1] 300  25
 

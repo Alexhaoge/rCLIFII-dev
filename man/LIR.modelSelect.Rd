@@ -14,10 +14,9 @@ LIR.modelSelect(
   criterion = "CLICa",
   ...,
   MCLE = FALSE,
-  T = NULL,
   B = 500,
   cl = NULL,
-  ncore = -1,
+  ncores = -1,
   verbose = TRUE
 )
 }
@@ -58,12 +57,10 @@ the initial value for optimizer. Boolean, default FALSE.}
 
 \item{cl}{Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]}
 
-\item{ncore}{Number of processors to use. Default -1(which means all available cores).
+\item{ncores}{Number of processors to use. Default -1(which means all available cores).
 This argument will be suppressed if cl is not NULL.}
 
 \item{verbose}{Whether return verbose output. Default TRUE.}
-
-\item{`T`}{Total study time. Required for CLICb and BIC.}
 }
 \value{
 If `verbose` is FALSE return the score list of each model only. Otherwise
@@ -79,7 +76,7 @@ return a list.
 }
 \description{
 List of model should be provided and a specific criterion among
-AIC/BIC/QAIC/CLICa/CLICb should be assigned. This function will calculate
+AIC/QAIC/CLICa/CLICb should be assigned. This function will calculate
 score of each model with the given criterion and select the model with highest
 score as the best one.
 }

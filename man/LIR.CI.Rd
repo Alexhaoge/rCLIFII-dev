@@ -12,7 +12,7 @@ LIR.CI(
   ...,
   B = 500,
   cl = NULL,
-  ncore = -1,
+  ncores = -1,
   alpha = 0.05
 )
 }
@@ -31,7 +31,7 @@ LIR.CI(
 
 \item{cl}{Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]}
 
-\item{ncore}{Number of processors to use. Default -1(which means all available cores).
+\item{ncores}{Number of processors to use. Default -1(which means all available cores).
 This argument will be suppressed if cl is not NULL.}
 
 \item{alpha}{Confidence level. Default 0.05.}

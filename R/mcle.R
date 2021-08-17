@@ -268,7 +268,7 @@ LIR.MCLE <-
 #' @param ... Additional parameters passed to model
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
-#' @param ncore Number of processors to use. Default -1(which means all available cores).
+#' @param ncores Number of processors to use. Default -1(which means all available cores).
 #'   This argument will be suppressed if cl is not NULL.
 #' @param alpha Confidence level. Default 0.05.
 #'
@@ -297,7 +297,7 @@ LIR.CI <-
            ...,
            B = 500,
            cl = NULL,
-           ncore = -1,
+           ncores = -1,
            alpha = 0.05) {
     B <- as.integer(B)
     if (B <= 1)
@@ -305,11 +305,11 @@ LIR.CI <-
     clusterNotGiven <- FALSE
     if (is.null(cl)) {
       clusterNotGiven <- TRUE
-      if (ncore == -1)
-        ncore <- parallel::detectCores()
-      else if (!is.integer(ncore) || ncore <= 0)
-        stop("ncore must be a positive integer")
-      cl <- parallel::makeCluster(ncore)
+      if (ncores == -1)
+        ncores <- parallel::detectCores()
+      else if (!is.integer(ncores) || ncores <= 0)
+        stop("ncores must be a positive integer")
+      cl <- parallel::makeCluster(ncores)
     } else if (!is(cl, 'cluster')) {
       stop('cl must be a cluster')
     }

@@ -17,7 +17,7 @@ LIR.CLICa(
   MCLE = FALSE,
   B = 500,
   cl = NULL,
-  ncore = -1
+  ncores = -1
 )
 
 LIR.CLICb(
@@ -32,7 +32,7 @@ LIR.CLICb(
   MCLE = FALSE,
   B = 500,
   cl = NULL,
-  ncore = -1
+  ncores = -1
 )
 }
 \arguments{
@@ -66,7 +66,7 @@ the initial value for optimizer. Boolean, default FALSE.}
 
 \item{cl}{Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]}
 
-\item{ncore}{Number of processors to use. Default -1(which means all available cores).
+\item{ncores}{Number of processors to use. Default -1(which means all available cores).
 This argument will be suppressed if cl is not NULL.}
 
 \item{`T`}{Total study time. Required for CLICb.}
