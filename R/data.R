@@ -32,9 +32,9 @@
 #' @examples
 #' # Example of data simulation
 #' # Set observation time
-#' t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
+#' tp <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 #' # Generate observation matrix with model C
-#' data <- move.simulate.C(T=300, N=100, n=40, tp=t, lambda=0.08, mu=0.04)
+#' data <- LIR.simulate.C(Z=300, N=100, n=40, tp=tp, lambda=0.08, mu=0.04)
 #' dim(data)
 #' # [1] 300  25
 #'
@@ -176,7 +176,6 @@ LIR.pairwise <- function(data, tp = NULL, require_tau = TRUE, require_n = TRUE) 
   return(obs)
 }
 
-
 #' Non-parametric estimation of LIR
 #'
 #' @param data
@@ -187,6 +186,7 @@ LIR.pairwise <- function(data, tp = NULL, require_tau = TRUE, require_n = TRUE) 
 #' @export
 #'
 #' @examples
+
 non.lir <- function(data, n, tp) {
 
 
