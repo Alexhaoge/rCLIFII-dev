@@ -10,6 +10,7 @@
 #'
 #' @param theta Parameter to estimate.
 #' @param tau Lagged time \eqn{\tau}.
+#' @param ... extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
 #'
 #' @details
 #' In model A, it is assumed that no migration occurs and population N remains constant.
@@ -38,6 +39,7 @@ LIR.model.A <- function(theta, tau, ...) {
 #'
 #' @param theta Parameter to estimate.
 #' @param tau Lagged time \eqn{\tau}.
+#' @param ... extra arguments to be passed to gradient function
 #'
 #' @return vector
 #' @export
@@ -53,6 +55,7 @@ LIR.grad.A <- function(theta, tau, ...) {
 #'
 #' @param theta Parameter to estimate.
 #' @param tau Lagged time \eqn{\tau}.
+#' @param ... extra arguments to be passed to hessian function
 #'
 #' @return A symmetric matrix.
 #' @rdname hessian

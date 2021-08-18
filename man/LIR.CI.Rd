@@ -8,7 +8,7 @@ LIR.CI(
   theta,
   model,
   data,
-  t,
+  tp,
   ...,
   B = 500,
   cl = NULL,
@@ -23,7 +23,7 @@ LIR.CI(
 
 \item{data}{Observation matrix}
 
-\item{t}{List-like observation time(1d vector)}
+\item{tp}{List-like observation time(1d vector)}
 
 \item{...}{Additional parameters passed to model}
 
@@ -49,7 +49,7 @@ Estimate of LIR using MCLE is asymptotically normal so here bootstrap is applied
 # Set observation time
 t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 # Generate observation matrix with model C
-data <- move.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
+data <- LIR.simulate.C(300, 100, 40, t, 0.08, 0.04)
 # CI
 LIR.CI(c(0.001, 0.001, 0.001), LIR.model.C, data, t, B = 10)
 #              [,1]       [,2]        [,3]

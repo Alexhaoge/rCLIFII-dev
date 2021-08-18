@@ -17,6 +17,8 @@ LIR.grad.C(theta, tau, ...)
 \item{theta}{Parameter to estimate.}
 
 \item{tau}{Lagged time \eqn{\tau}.}
+
+\item{...}{extra arguments to be passed to gradient function}
 }
 \value{
 vector

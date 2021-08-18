@@ -1,4 +1,4 @@
 library(testthat)
-library(CL4Eco)
+library(rCLIFII)
 
-test_check("CL4Eco")
+test_check("rCLIFII")

@@ -17,6 +17,8 @@ LIR.hessian.C(theta, tau, ...)
 \item{theta}{Parameter to estimate.}
 
 \item{tau}{Lagged time \eqn{\tau}.}
+
+\item{...}{extra arguments to be passed to hessian function}
 }
 \value{
 A symmetric matrix.

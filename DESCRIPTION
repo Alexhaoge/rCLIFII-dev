@@ -19,9 +19,11 @@ BugReports: https://github.com/Alexhaoge/rCLIFII/issues
 Roxygen: list(markdown = FALSE)
 RoxygenNote: 7.1.1
 Imports:
+    base,
     stats,
     parallel,
-    sampling
+    sampling,
+    Rcpp
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

@@ -17,6 +17,8 @@ LIR.model.C(theta, tau, ...)
 \item{theta}{Parameter to estimate.}
 
 \item{tau}{Lagged time \eqn{\tau}.}
+
+\item{...}{extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}}
 }
 \value{
 \eqn{R_{\tau}}

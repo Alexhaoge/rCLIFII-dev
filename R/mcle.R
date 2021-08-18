@@ -34,9 +34,9 @@ LIR.CL.pair <- function(theta, model, ni, nj, m, tau, ...) {
   return(-likelihood)
 }
 
-#' LIR.CL <- function(theta, model, n, data, t, ...) {
-#'
-#' }
+LIR.CL <- function(theta, model, n, data, tp, ...) {
+
+}
 
 
 # Gradient of Composite Likelihood ----------------------------------------
@@ -139,7 +139,7 @@ LIR.MCLE.pair <-
           ...
         )
       }
-    if (is.null(optimizer)) {
+    if (base::is.null(optimizer)) {
       if (length(theta) == 1)
         opt_res <-
           stats::optim(
@@ -182,7 +182,7 @@ LIR.MCLE.pair <-
 #' @param theta Initial value for parameters to estimate
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}
 #' @param data Observation matrix
-#' @param t List-like observation time(1d vector)
+#' @param tp List-like observation time(1d vector)
 #' @param ni Number of individuals at each observation
 #' @param nj Number of individuals at each lagged observation
 #' @param m Vector of lagged identification for all observation pair
@@ -218,7 +218,7 @@ LIR.MCLE <-
   function(theta,
            model,
            data,
-           t,
+           tp,
            ...,
            lower = 0.0,
            upper = 1.0,
@@ -230,7 +230,7 @@ LIR.MCLE <-
       stop("Number of observation not match(data & t)")
     n <- colSums(data != 0)
     if (lent <= 20000) {
-      obs <- LIR.pairwise(data = data, t = t, tau = TRUE)
+      obs <- LIR.pairwise(data = data, tp = tp, require_tau = TRUE, require_n = TRUE)
       return(
         LIR.MCLE.pair(
           theta,
@@ -264,7 +264,7 @@ LIR.MCLE <-
 #' @param theta initial value of estimate for MCLE iteration
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}
 #' @param data Observation matrix
-#' @param t List-like observation time(1d vector)
+#' @param tp List-like observation time(1d vector)
 #' @param ... Additional parameters passed to model
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
@@ -280,11 +280,11 @@ LIR.MCLE <-
 #' @examples
 #' # Example of confidence interval of MCLE
 #' # Set observation time
-#' t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
+#' tp <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 #' # Generate observation matrix with model C
-#' data <- move.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
+#' data <- LIR.simulate.C(300, 100, 40, tp, 0.08, 0.04)
 #' # CI
-#' LIR.CI(c(0.001, 0.001, 0.001), LIR.model.C, data, t, B = 10)
+#' LIR.CI(c(0.001, 0.001, 0.001), LIR.model.C, data, tp, B = 10)
 #' #              [,1]       [,2]        [,3]
 #' # lower 0.005654683 0.08993638 0.003217763
 #' # upper 0.008583934 0.33458409 0.003946556
@@ -293,7 +293,7 @@ LIR.CI <-
   function(theta,
            model,
            data,
-           t,
+           tp,
            ...,
            B = 500,
            cl = NULL,
@@ -303,27 +303,27 @@ LIR.CI <-
     if (B <= 1)
       stop("B must be a positive integer bigger than 1")
     clusterNotGiven <- FALSE
-    if (is.null(cl)) {
+    if (base::is.null(cl)) {
       clusterNotGiven <- TRUE
       if (ncores == -1)
         ncores <- parallel::detectCores()
-      else if (!is.integer(ncores) || ncores <= 0)
+      else if (!base::is.integer(ncores) || ncores <= 0)
         stop("ncores must be a positive integer")
       cl <- parallel::makeCluster(ncores)
-    } else if (!is(cl, 'cluster')) {
+    } else if (!base::is(cl, 'cluster')) {
       stop('cl must be a cluster')
     }
-    theta <- LIR.MCLE(theta, model, data, t, ..., verbose = FALSE)
+    theta <- LIR.MCLE(theta, model, data, tp, ..., verbose = FALSE)
     theta_boot <- parallel::parSapply(cl, 1:B, function(id) {
       data_bootstrap <- LIR.bootstrap(data)
-      return(LIR.MCLE(theta, model, data_bootstrap, t, ..., verbose = FALSE))
+      return(LIR.MCLE(theta, model, data_bootstrap, tp, ..., verbose = FALSE))
     })
     if (clusterNotGiven) parallel::stopCluster(cl)
-    if (!is.numeric(alpha) || alpha <= 0 || alpha >= 1)
+    if (!base::is.numeric(alpha) || alpha <= 0 || alpha >= 1)
       stop("Confidence level should between 0 and 1(exclusive), usually a small value like 0.05")
-    z <- qnorm(1 - alpha / 2)
+    z <- stats::qnorm(1 - alpha / 2)
     if (length(theta) == 1) {
-      std <- var(theta_boot)
+      std <- stats::var(theta_boot)
       return(c(theta - z * std, theta + z * std))
     } else {
       std <- sqrt(diag(stats::var(t(theta_boot))))

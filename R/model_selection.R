@@ -110,11 +110,11 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
     if (B <= 1)
       stop("B must be a positive integer bigger than 1")
     clusterNotGiven <- FALSE
-    if (is.null(cl)) {
+    if (base::is.null(cl)) {
       clusterNotGiven <- TRUE
       if (ncores == -1)
         ncores <- parallel::detectCores()
-      else if (!is.integer(ncores) || ncores <= 0)
+      else if (!base::is.integer(ncores) || ncores <= 0)
         stop("ncores must be a positive integer")
       cl <- parallel::makeCluster(ncores)
     } else if (!is(cl, 'cluster')) {
@@ -169,7 +169,7 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
 #' @param ncores Number of processors to use. Default -1(which means all available cores).
 #' This argument will be suppressed if cl is not NULL.
-#' @param `T` Total study time. Required for CLICb.
+#' @param T Total study time. Required for CLICb.
 #'
 #' @return CLIC score
 #' @export

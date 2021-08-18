@@ -69,7 +69,7 @@ LIR.simulate.B <- function(N, n, tp, lambda, seed = NULL) {
   }
   tT <- tp[lent]
   for (i in 2:tT) {
-    unif <- runif(N, 0, 1)
+    unif <- stats::runif(N, 0, 1)
     pop <- (unif <= lambda) + pop
     if (tp[j] == i) {
       data[, j] <- pop * (sampling::srswor(n[j], N) > 0)
@@ -104,8 +104,8 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
   }
   tT <- tp[lent]
   for (i in 2:tT) {
-    unif_in <- runif(length(pop_in))
-    unif_out <- runif(length(pop_out))
+    unif_in <- stats::runif(length(pop_in))
+    unif_out <- stats::runif(length(pop_out))
     pop_in_new <- c(
       pop_in[which(unif_in > lambda)],
       pop_out[which(unif_out <= mu)]

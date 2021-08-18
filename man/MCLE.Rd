@@ -24,7 +24,7 @@ LIR.MCLE(
   theta,
   model,
   data,
-  t,
+  tp,
   ...,
   lower = 0,
   upper = 1,
@@ -62,7 +62,7 @@ to wrap this optimizer so that it has the same parameter format as optim().}
 
 \item{data}{Observation matrix}
 
-\item{t}{List-like observation time(1d vector)}
+\item{tp}{List-like observation time(1d vector)}
 }
 \value{
 If verbose is TRUE return the full result from optimizer otherwise return MCLE only.
