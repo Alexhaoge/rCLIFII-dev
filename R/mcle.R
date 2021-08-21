@@ -5,8 +5,10 @@
 #' @description
 #' This CL function requires a sample format of pairwise lagged identification,
 #' which is a list-like data containing lagged identification of of all pairs of
-#' observation. This function is recommended when total observation time is very small and
-#' pairwise lagged identification is easy to pre-calculate through `LIR.pairwise()`.
+#' observation. In gerneral cases we should use `LIR.CL` which is implemented
+#' by C++ with time complexity of \eqn{\Theta(length(tp)^2)}. `LIR.CL.pair`
+#' is recommended when total observation time is very small and pairwise lagged
+#' identification is easy to pre-calculate through `LIR.pairwise()`.
 #' The notation of the estimation is \eqn{\hat{R_{\tau}}}.
 #'
 #' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}
@@ -14,34 +16,33 @@
 #'   that takes `theta`, `tau_i`(and other arguments if necessary) and return a
 #'   numeric number
 #' @param data Observation matrix
-#' @param t List-like observation time(1d vector)
+#' @param tp List-like observation time(1d vector)
 #' @param ni Number of individuals of the former observation at each lagged time pair.
 #' @param nj Number of individuals of the latter observation at each lagged time pair.
 #' @param m vector of total lagged identification number for all lagged time pair
 #' @param tau vector of time interval of lagged identification
-#' @param ... extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
+#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
 #'
 #' @return minus Likelihood score(numeric). Inf if theta out of [0,1]
 #' @export
 #' @rdname CL
 #'
 #' @examples
-LIR.CL.pair <- function(theta, model, ni, nj, m, tau, ...) {
-  R_tau <- sapply(tau, function(t){model(theta=theta, tau=t, ...)})
-  if (min(R_tau * nj)<=0) return(9e12);
-  if (max(R_tau * nj)>=1) return(9e12);
-  likelihood <- sum(m * log(R_tau*nj) + (ni-m) * log(1 - R_tau*nj))
-  return(-likelihood)
-}
-
-LIR.CL <- function(theta, model, n, data, tp, ...) {
-
+LIR.CL.pair <- function(theta, model, ni, nj, m, tau, model_args = list()) {
+  R_tau <- sapply(tau, function(t){model(theta=theta, tau=t, model_args)})
+  nR_tau = R_tau * nj
+  if (min(nR_tau)<=0) return(-9e12);
+  if (max(nR_tau)>=1) return(-9e12);
+  likelihood <- sum(m * log(nR_tau) + (ni-m) * log(1 - nR_tau))
+  return(likelihood)
 }
 
 
 # Gradient of Composite Likelihood ----------------------------------------
 
-#' @title Gradient of composite likelihood for pairwise input
+#' @title Gradient of composite likelihood
 #'
 #' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
@@ -50,19 +51,23 @@ LIR.CL <- function(theta, model, n, data, tp, ...) {
 #' @param grad Gradient of the model. Should be a function that takes theta,
 #'   tau_i(and other arguments if necessary) and return a 1D
 #'   vector with same length as theta
+#' @param data Observation matrix
+#' @param tp List-like observation time(1d vector)
 #' @param ni of individuals of the former observation at each lagged time pair.
 #' @param nj Number of individuals of the latter observation at each lagged time pair.
 #' @param m vector of total lagged identification number for all lagged time pair
 #' @param tau vector of time interval of lagged identification
-#' @param ... extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
-#'
+#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #' @return A 1D vector with same length as theta
+#' @rdname CLgrad
 #' @export
 #'
 #' @examples
-LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, ...) {
-  R_tau <- sapply(tau, function(t){model(theta, t, ...)})
-  R_tau_grad <- t(sapply(tau, function(t){grad(theta, t, ...)}))
+LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, model_args = list()) {
+  R_tau <- sapply(tau, function(t){model(theta, t, model_args)})
+  R_tau_grad <- t(sapply(tau, function(t){grad(theta, t, model_args)}))
   if (length(theta) == 1)
     R_tau_grad <- t(R_tau_grad)
   return(colSums(R_tau_grad * (m / R_tau - (ni - m) * nj / (1 - nj * R_tau))))
@@ -71,7 +76,7 @@ LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, ...) {
 
 # Hessian Matrix of Composite Likelihood ----------------------------------
 
-#' @title Hessian of composite likelihood for pairwise input
+#' @title Hessian matrix of composite likelihood
 #'
 #' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
@@ -83,19 +88,24 @@ LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, ...) {
 #' @param hessian Hessian of the model. Should be a function that takes theta,
 #'   tau_i(and other arguments if necessary) and return a square symmetric matrix
 #'   with length(theta) rows and columns
+#' @param data Observation matrix
+#' @param tp List-like observation time(1d vector)
 #' @param ni of individuals of the former observation at each lagged time pair.
 #' @param nj Number of individuals of the latter observation at each lagged time pair.
 #' @param m vector of total lagged identification number for all lagged time pair
 #' @param tau vector of time interval of lagged identification
-#' @param ... extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #'
 #' @return A square symmetric matrix with length(theta) rows and columns.
+#' @rdname CLhessian
 #' @export
 #'
 #' @examples
-LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, ...) {
-  R_tau <- sapply(tau, function(t) {model(theta, t, ...)})
-  R_tau_grad <- sapply(tau, function(t) {grad(theta, t, ...)}, simplify = 'matrix')
+LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, model_args = list()) {
+  R_tau <- sapply(tau, function(t) {model(theta, t, model_args)})
+  R_tau_grad <- sapply(tau, function(t) {grad(theta, t, model_args)}, simplify = 'matrix')
   if (length(theta) == 1)
     R_tau_grad <- t(R_tau_grad)
   d1 <- dim(R_tau_grad)
@@ -103,7 +113,7 @@ LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, ...)
     array(apply(R_tau_grad, 2, function(t) {t %*% t(t)}), dim = c(d1[1], d1[1], d1[2])) *
     rep((ni - m) * nj^2 / (1 - nj * R_tau)^2 + m / R_tau^2, each=d1[1]*d1[1])
   R_tau_hessian <-
-    sapply(tau, function(t) {hessian(theta, t, ...)}, simplify = 'array') *
+    sapply(tau, function(t) {hessian(theta, t, model_args)}, simplify = 'array') *
     rep((ni - m) * nj / (1 - nj * R_tau) - m / R_tau, each=d1[1]*d1[1])
   if (d1[1] == 1) R_tau_hessian <- array(R_tau_hessian, dim = c(d1[1], d1[1], d1[2]))
   return(-rowSums(R_tau_grad2 + R_tau_hessian, dims = 2))
@@ -121,49 +131,22 @@ LIR.MCLE.pair <-
            nj,
            m,
            tau,
-           ...,
+           model_args = list(),
            lower = 0.0,
            upper = 1.0,
            optimizer = NULL,
            opt_arg = list(),
            verbose = FALSE) {
-    clf <-
-      function(theta_) {
-        LIR.CL.pair(
-          theta = theta_,
-          model = model,
-          ni = ni,
-          nj = nj,
-          m = m,
-          tau = tau,
-          ...
-        )
-      }
+    clf <- function(theta_) { -LIR.CL.pair(theta_, model, ni, nj, m, tau, model_args) }
     if (base::is.null(optimizer)) {
       if (length(theta) == 1)
         opt_res <-
-          stats::optim(
-            par = theta,
-            fn = clf,
-            method = 'Brent',
-            lower = lower,
-            upper = upper,
-            control = opt_arg
-          )
+          stats::optim(par = theta, fn = clf, method = 'Brent',
+            lower = lower, upper = upper, control = opt_arg)
       else
-        opt_res <-
-          stats::optim(
-            par = theta,
-            fn = clf,
-            control = opt_arg
-          )
+        opt_res <- stats::optim(par = theta, fn = clf, control = opt_arg)
     } else {
-      opt_res <-
-        optimizer(theta,
-                  clf,
-                  lower = lower,
-                  upper = upper,
-                  control = opt_arg)
+      opt_res <- optimizer(theta, clf, lower = lower, upper = upper, control = opt_arg)
     }
     if(verbose) return(opt_res)
     else return(opt_res$par)
@@ -173,21 +156,19 @@ LIR.MCLE.pair <-
 #' @title Maximal Composite Likelihood Estimate
 #'
 #' @description
-#' `LIR.MCLE.pair` is for pairwise list data input.
 #' `LIR.MCLE` is for observation matrix input. If number of observation(length(t))
-#' is less than 20000, pairwise data will be pre-calculated `LIR.MCLE.pair` will
-#' be used. Otherwise pairwise lagged identification will be calculated separately
-#' at every iteration.
+#' is less than 20000, pairwise data will be pre-calculated and `LIR.CL.pair`
+#' will be used. Otherwise pairwise lagged identification will be calculated
+#' separately at every iteration.
+#' `LIR.MCLE.pair` is for pairwise list data input.(Deprecated)
 #'
 #' @param theta Initial value for parameters to estimate
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}
 #' @param data Observation matrix
 #' @param tp List-like observation time(1d vector)
-#' @param ni Number of individuals at each observation
-#' @param nj Number of individuals at each lagged observation
-#' @param m Vector of lagged identification for all observation pair
-#' @param tau Vector of time interval of lagged identification
-#' @param ... Additional parameters passed to model
+#' @param model_args Additional parameters passed to model
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #' @param lower Lower bound for estimation
 #' @param upper Upper bound for estimation
 #' @param optimizer Optimizer to use. Default NULL(which means @seealso [optim()]
@@ -209,48 +190,33 @@ LIR.MCLE.pair <-
 #' # MCLE
 #' LIR.MCLE(rep(0.001, 3), LIR.model.C, data, t)
 #' # [1] 0.007119308 0.212260232 0.003582160
-#' # Convert to pairwise data
-#' obs <- LIR.pairwise(data, t)
-#' # Pairwise MCLE
-#' LIR.MCLE.pair(rep(0.001, 3), LIR.model.C, obs$ni, obs$nj, obs$m, obs$tau, verbose=T)
 #'
 LIR.MCLE <-
   function(theta,
            model,
            data,
            tp,
-           ...,
+           model_args = list(),
+           mtau = Inf,
            lower = 0.0,
            upper = 1.0,
            optimizer = NULL,
            opt_arg = list(),
            verbose = FALSE) {
-    lent <- length(t)
-    if (lent != ncol(data))
-      stop("Number of observation not match(data & t)")
-    n <- colSums(data != 0)
-    if (lent <= 20000) {
-      obs <- LIR.pairwise(data = data, tp = tp, require_tau = TRUE, require_n = TRUE)
-      return(
-        LIR.MCLE.pair(
-          theta,
-          model,
-          obs$ni,
-          obs$nj,
-          obs$m,
-          obs$tau,
-          ...,
-          lower = lower,
-          upper = upper,
-          optimizer = optimizer,
-          opt_arg = opt_arg,
-          verbose = verbose
-        )
-      )
+    if (length(tp) != ncol(data))
+      stop("Number of observation not match")
+    clf <- function(theta_) {-LIR.CL(theta, model, data, tp, model_args, mtau)}
+    if (base::is.null(optimizer)) {
+      if (length(theta) == 1)
+        opt_res <- stats::optim(par = theta, fn = clf, method = 'Brent',
+            lower = lower, upper = upper, control = opt_arg)
+      else
+        opt_res <- stats::optim(par = theta, fn = clf, control = opt_arg)
     } else {
-      stop('Too much observation')
-      # TODO: undecided
+      opt_res <- optimizer(theta, clf, lower = lower, upper = upper, control = opt_arg)
     }
+    if(verbose) return(opt_res)
+    else return(opt_res$par)
   }
 
 
@@ -265,7 +231,10 @@ LIR.MCLE <-
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}
 #' @param data Observation matrix
 #' @param tp List-like observation time(1d vector)
-#' @param ... Additional parameters passed to model
+#' @param ... Additional parameters passed to the optimizer of MCLE
+#' @param model_args Additional parameters passed to model
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
 #' @param ncores Number of processors to use. Default -1(which means all available cores).
@@ -295,6 +264,8 @@ LIR.CI <-
            data,
            tp,
            ...,
+           model_args = list(),
+           mtau = Inf,
            B = 500,
            cl = NULL,
            ncores = -1,
@@ -313,10 +284,10 @@ LIR.CI <-
     } else if (!base::is(cl, 'cluster')) {
       stop('cl must be a cluster')
     }
-    theta <- LIR.MCLE(theta, model, data, tp, ..., verbose = FALSE)
+    theta <- LIR.MCLE(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, verbose = FALSE)
     theta_boot <- parallel::parSapply(cl, 1:B, function(id) {
       data_bootstrap <- LIR.bootstrap(data)
-      return(LIR.MCLE(theta, model, data_bootstrap, tp, ..., verbose = FALSE))
+      return(LIR.MCLE(theta, model, data_bootstrap, tp, ..., model_args=model_args, mtau=mtau, verbose = FALSE))
     })
     if (clusterNotGiven) parallel::stopCluster(cl)
     if (!base::is.numeric(alpha) || alpha <= 0 || alpha >= 1)

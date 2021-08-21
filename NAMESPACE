@@ -2,6 +2,7 @@
 
 export(LIR.AIC.pair)
 export(LIR.CI)
+export(LIR.CL)
 export(LIR.CL.pair)
 export(LIR.CLICa)
 export(LIR.CLICb)
@@ -25,3 +26,5 @@ export(LIR.simulate.A)
 export(LIR.simulate.B)
 export(LIR.simulate.C)
 export(non.lir)
+importFrom(Rcpp,sourceCpp)
+useDynLib(rCLIFII, .registration = TRUE)

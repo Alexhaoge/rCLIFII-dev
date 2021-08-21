@@ -69,7 +69,7 @@ the initial value for optimizer. Boolean, default FALSE.}
 \item{ncores}{Number of processors to use. Default -1(which means all available cores).
 This argument will be suppressed if cl is not NULL.}
 
-\item{`T`}{Total study time. Required for CLICb.}
+\item{T}{Total study time. Required for CLICb.}
 }
 \value{
 CLIC score

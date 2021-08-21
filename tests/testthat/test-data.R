@@ -46,8 +46,4 @@ test_that("Pairwise", {
   expect_equal(obs$ni, m)
   expect_equal(obs$nj, m)
   expect_equal(obs$tau, tau)
-  expect_error(LIR.pairwise(data, require_tau=TRUE))
-  obs <- LIR.pairwise(data, tp, require_tau = FALSE, require_n = FALSE)
-  expect_null(obs$tau)
-  expect_null(obs$ni)
 })

@@ -2,23 +2,35 @@
 # AIC/BIC/QAIC ------------------------------------------------------------
 
 # Base function for AIC/BIC/QAIC. Should not export
-.LIR.XIC.pair <- function (theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
+.LIR.XIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
   if (MCLE) {
-    return(2 * LIR.CL.pair(theta, model, ni, nj, m, tau, ...))
+    return(-2 * LIR.CL.pair(theta, model, ni, nj, m, tau, ...))
   } else {
     mcle <- LIR.MCLE.pair(theta, model, ni, nj, m, tau, ..., verbose=TRUE)
     return(2 * mcle$value)
   }
 }
+.LIR.XIC <- function(theta, model, data, tp, ..., model_args = list(), mtau = Inf, MCLE = FALSE) {
+  if (length(tp) != ncol(data))
+    stop("Number of observation not match")
+  if (MCLE) {
+    return(-2 * LIR.CL(theta, model, data, tp, model_args, mtau))
+  } else {
+    mcle <- LIR.MCLE(theta, model, data, tp, model_args, mtau, ..., verbose=TRUE)
+    return(2 * mcle$value)
+  }
+}
 
-#' @name  LIR.XIC.pair
+
+#' @name  LIR.XIC/LIR.XIC.pair
 #' @title Other model selection criterion(AIC/BIC/QAIC)
 #'
 #' Not recommended for composite likelihood model.
 #'
 #' @description
-#' `LIR.AIC.pair` is for AIC with pairwise data.
-#' `LIR.QAIC.pair` is for QIC with pairwise data.
+#' `LIR.AIC` and `LIR.AIC.pair`(deprecated) is for AIC.
+#' `LIR.BIC` is for BIC.
+#' `LIR.QAIC` and `LIR.QAIC.pair`(deprecated) is for QAIC.
 #' \deqn{AIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}+2k}
 #' \deqn{QAIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}/\hat{c}+2k}
 #' Here \eqn{k} is `length(theta)`, T is total study time, \eqn{\hat{c}} is the
@@ -31,14 +43,23 @@
 #' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
 #' that takes theta, tau_i(and other arguments if necessary) and return a
 #' numeric number
+#' @param data Observation matrix
+#' @param tp List-like observation time(1d vector)
+#' @param model_args Additional parameters passed to model
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #' @param ni Number of individuals at each observation
 #' @param nj Number of individuals at each lagged observation
 #' @param m Vector of lagged identification for all observation pair
 #' @param tau Vector of time interval of lagged identification
-#' @param ... Additional parameters passed to model, or upper/lower bound and optimize
+#' @param ... Additional optimizer parameters
 #' argument when calculating MCLE.
 #' @param MCLE If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
 #' the initial value for optimizer. Boolean, default FALSE.
+#'
+#' @references  Hal Whitehead (2007) Selection of Models of Lagged Identification Rates
+#' and Lagged Association Rates Using AIC and QAIC, Communications in Statistics - Simulation and
+#' Computation, 36:6, 1233-1246, DOI: 10.1080/03610910701569531
 #'
 #' @return score
 #' @export
@@ -49,34 +70,49 @@ LIR.AIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
   return(.LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE) + 2 * length(theta))
 }
 
-
-# LIR.BIC.pair <- function(theta, model, ni, nj, m, tau, `T`, ..., MCLE = FALSE) {
-#   return(.LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE) + length(theta) * log(`T`))
-# }
+#' @rdname AICBICQAIC
+#' @export
+LIR.AIC <- function(theta, model, data, tp, ..., model_args=list(), mtau=Inf, MCLE = FALSE) {
+  return(.LIR.XIC(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, MCLE = MCLE) + 2 * length(theta))
+}
 
 #' @rdname AICBICQAIC
 #' @export
-LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
+LIR.BIC <- function(theta, model, data, tp, ..., model_args=list(), mtau=Inf, MCLE = FALSE) {
+  return(.LIR.XIC.pair(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, MCLE=MCLE) + length(theta) * log(ncol(data)))
+}
+
+#' @rdname AICBICQAIC
+#' @export
+LIR.QAIC.pair <- function(c, theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
   # NOTE: df需要使用参数最多的
   cl <- .LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE)
-  tab <- table(tau)
-  ltab <- tab
-  df <- ltab - length(theta) - 1
-  x2 <- 0
-  tmp <- c()
-  cnt_category <- 0
-  for (i in 1:ltab) {
-    cnt_category <- cnt_category + tab[i]
-    append(tmp, as.numeric(names(tab[i])))
-    if (cnt_category >= 6 || i == ltab) {
-      m_itau <- m[tau %in% tmp]
-      mean_m <- mean(m_itau)
-      x2 <- x2 + sum((m_itau - mean_m)^2) / mean_m
-      cnt_category <- 0
-      tmp <- c()
-    }
-  }
-  c <- x2 / df
+  # tab <- table(tau)
+  # ltab <- tab
+  # df <- ltab - length(theta) - 1
+  # x2 <- 0
+  # tmp <- c()
+  # cnt_category <- 0
+  # for (i in 1:ltab) {
+  #   cnt_category <- cnt_category + tab[i]
+  #   append(tmp, as.numeric(names(tab[i])))
+  #   if (cnt_category >= 6 || i == ltab) {
+  #     m_itau <- m[tau %in% tmp]
+  #     mean_m <- mean(m_itau)
+  #     x2 <- x2 + sum((m_itau - mean_m)^2) / mean_m
+  #     cnt_category <- 0
+  #     tmp <- c()
+  #   }
+  # }
+  # c <- x2 / df
+  return(cl / c + 2 * length(theta))
+}
+
+#' @rdname AICBICQAIC
+#' @export
+LIR.QAIC <- function(c, theta, model, data, tp, ..., model_args=list(), mtau=Inf, MCLE = FALSE) {
+  # NOTE: df需要使用参数最多的
+  cl <- .LIR.XIC(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, MCLE = MCLE)
   return(cl / c + 2 * length(theta))
 }
 
@@ -85,24 +121,18 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 
 # Base function for LIR.CLICa and LIR.CLICb. Should not export
 .LIR.CLICbase <-
-  function(theta,
-           model,
-           grad,
-           hessian,
-           data,
-           t,
+  function(theta, model, grad, hessian, data, tp,
            ...,
+           model_args = list(),
+           mtau = Inf,
            MCLE = FALSE,
            B = 500,
            cl = NULL,
            ncores = -1) {
-    obs <- LIR.pairwise(data, t, require_tau = TRUE, require_n = TRUE)
     if (MCLE) {
-      clh <-
-        2 * LIR.CL.pair(theta, model, obs$ni, obs$nj, obs$m, obs$tau, ...)
+      clh <- -2 * LIR.CL(theta, model, data, tp, model_args, mtau)
     } else {
-      mcle <-
-        LIR.MCLE.pair(theta, model, obs$ni, obs$nj, obs$m, obs$tau, ..., verbose=TRUE)
+      mcle <- LIR.MCLE(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, verbose=TRUE)
       clh <- 2 * mcle$value
       theta <- mcle$par
     }
@@ -122,14 +152,11 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
     }
     theta_MCLE <- parallel::parSapply(cl, 1:B, function(id) {
       data_bootstrap <- LIR.bootstrap(data)
-      return(LIR.MCLE(theta, model, data_bootstrap, t, ..., verbose = FALSE))
+      return(LIR.MCLE(theta, model, data_bootstrap, tp, ..., model_args=model_args, mtau=mtau, verbose = FALSE))
     })
-    if (clusterNotGiven)
-      parallel::stopCluster(cl)
-    H <-
-      LIR.CLhessian.pair(theta, model, grad, hessian, obs$ni, obs$nj, obs$m, obs$tau, ...)
-    if (length(theta) > 1)
-      theta_MCLE <- t(theta_MCLE)
+    if (clusterNotGiven)  parallel::stopCluster(cl)
+    H <- LIR.CLhessian(theta, model, grad, hessian, data, tp, model_args, mtau)
+    if (length(theta) > 1)  theta_MCLE <- t(theta_MCLE)
     varBoot <- stats::var(theta_MCLE)
     return(c(clh, sum(diag(H %*% varBoot))))
   }
@@ -160,16 +187,17 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 #' tau_i(and other arguments if necessary) and return a square symmetric matrix
 #' with length(theta) rows and columns
 #' @param data Observation matrix
-#' @param t List-like observation time(1d vector)
-#' @param ... Additional parameters passed to model, or upper/lower bound and optimize
-#' argument when calculating MCLE.
+#' @param tp List-like observation time(1d vector)
+#' @param ... Additional optimizer parameters passed for MCLE.
+#' @param model_args Additional parameters passed to model
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #' @param MCLE If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
 #' the initial value for optimizer. Boolean, default FALSE.
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
 #' @param ncores Number of processors to use. Default -1(which means all available cores).
 #' This argument will be suppressed if cl is not NULL.
-#' @param T Total study time. Required for CLICb.
 #'
 #' @return CLIC score
 #' @export
@@ -177,54 +205,20 @@ LIR.QAIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 #'
 #' @example
 LIR.CLICa <-
-  function(theta, model, grad, hessian, data, t, ..., MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
-    tmp <-
-      .LIR.CLICbase(
-        theta,
-        model,
-        grad,
-        hessian,
-        data,
-        t,
-        ...,
-        MCLE = MCLE,
-        B = B,
-        cl = cl,
-        ncores = ncores
-      )
+  function(theta, model, grad, hessian, data, tp, ..., model_args = list(), mtau = Inf, MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
+    tmp <- .LIR.CLICbase(theta, model, grad, hessian, data, tp, ...,
+      model_args = model_args, mtau = mtau, MCLE = MCLE, B = B, cl = cl, ncores = ncores)
     return(tmp[1] + 2 * tmp[2])
   }
 
 #' @rdname CLIC
 #' @export
 LIR.CLICb <-
-  function(theta,
-           model,
-           grad,
-           hessian,
-           data,
-           t,
-           `T`,
-           ...,
-           MCLE = FALSE,
-           B = 500,
-           cl = NULL,
-           ncores = -1) {
-    tmp <-
-      .LIR.CLICbase(
-        theta,
-        model,
-        grad,
-        hessian,
-        data,
-        t,
-        ...,
-        MCLE = MCLE,
-        B = B,
-        cl = cl,
-        ncores = ncores
-      )
-    return(tmp[1] + log(`T`) * tmp[2])
+  function(theta, model, grad, hessian, data, tp, ..., model_args = list(), mtau = Inf, MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
+    tmp <- .LIR.CLICbase(theta, model, grad, hessian, data, tp, ...,
+        model_args = model_args, mtau = mtau, MCLE = MCLE,
+        B = B, cl = cl, ncores = ncores)
+    return(tmp[1] + log(length(tp)) * tmp[2])
   }
 
 
@@ -243,7 +237,7 @@ LIR.CLICb <-
 #' this is the MCLE, otherwise the initial value for optimizer. Theta is required
 #' because it is the only parameter that tells the dimension of estimating variable.
 #' @param data Observation matrix
-#' @param t List-like observation time(1d vector)
+#' @param tp List-like observation time(1d vector)
 #' @param model_list List of candidate models, default list('A', 'B', 'C').
 #' Only `as.list(function)` or 'A'/'B'/'C' is accepted.'A', 'B', 'C' are
 #' package's built-in models and will be replaced by `LIR.model.A`,
@@ -251,14 +245,17 @@ LIR.CLICb <-
 #' @param grad_list List of gradients correspond to candidate models.
 #' Only function or 'A'/'B'/'C' is accepted.'A', 'B', 'C' are package's built-in
 #' models and will be replaced by `LIR.grad.A`, `LIR.grad.B`, `LIR.grad.B`, respectively.
-#' Only required for CLICa/CLICb.
-#' @param hessian_list List of Hessian correspond to candidate models. Default list('A', 'B', 'C').
+#' Only required for CLICa/CLICb. Default list('A', 'B', 'C').
+#' @param hessian_list List of Hessian correspond to candidate models.
 #' Only function or 'A'/'B'/'C' is accepted.'A', 'B', 'C' will be replaced by
-#' `LIR.hessian.A`, `LIR.hessian.B`, `LIR.hessian.B`, respectively. Only required for CLICa/CLICb.
+#' `LIR.hessian.A`, `LIR.hessian.B`, `LIR.hessian.B`, respectively.
+#' Only required for CLICa/CLICb. Default list('A', 'B', 'C').
 #' @param criterion Model selection criterion. Should be one of 'AIC', 'BIC',
-#' 'QAIC', 'CLICa' and 'CLICb'. Default list('A', 'B', 'C').
-#' @param ... Additional parameters passed to model, or upper/lower bound and optimize
-#' argument when calculating MCLE.
+#' 'QAIC', 'CLICa' and 'CLICb'.
+#' @param ... Additional optimizer parameters for MCLE.
+#' @param model_args Additional parameters passed to model
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
 #' @param MCLE If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
 #' the initial value for optimizer. Boolean, default FALSE.
 #' @param B Bootstrap's repeat sampling times
@@ -287,12 +284,12 @@ LIR.CLICb <-
 #' @examples
 #' # Example of model selection
 #' # Set observation time
-#' t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
+#' tp <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 #' # Generate observation matrix with model C
-#' data <- move.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
+#' data <- move.simulate.C(300, 100, 605, 40, 0.08, 0.04)
 #' # Model Selection
 #' # Initial value of theta and boundary(when length(theta)==1) are very important
-#' ms <- LIR.modelSelect(data, t, B=4, MCLE=FALSE, lower=0.0005, upper=0.09)
+#' ms <- LIR.modelSelect(data, tp, B=4, MCLE=FALSE, lower=0.0005, upper=0.09)
 #' ms$score
 #' # [1] 1.800000e+13 1.099621e+04 1.074243e+04
 #' ms$best
@@ -302,13 +299,15 @@ LIR.CLICb <-
 #'
 LIR.modelSelect <-
   function(data,
-           t,
+           tp,
            theta_list = list(rep(0.1, 1), rep(0.001, 2), rep(0.001, 3)),
            model_list = list('A', 'B', 'C'),
            grad_list = list('A', 'B', 'C'),
            hessian_list = list('A', 'B', 'C'),
            criterion = 'CLICa',
            ...,
+           model_args = list(),
+           mtau = Inf,
            MCLE = FALSE,
            B = 500,
            cl = NULL,
@@ -332,14 +331,11 @@ LIR.modelSelect <-
     }
     score <- c()
     if (criterion %in% c('AIC', 'QAIC')) {
-      obs <- LIR.pairwise(data, t, require_tau = TRUE, require_n = TRUE)
-      if (criterion == 'AIC') {
-        for(i in 1:lenf) {
-          score[i] <- LIR.AIC.pair(theta_list[[i]], as.function(fun_list[[i]]), obs$ni, obs$nj, obs$m, obs$tau, ..., MCLE)
-        }
-      } else {
-        for(i in 1:lenf) {
-          score[i] <- LIR.QAIC.pair(theta_list[[i]], as.function(fun_list[[i]]), obs$ni, obs$nj, obs$m, obs$tau, ..., MCLE)
+      if (criterion == 'QAIC') {
+        c_hat =
+      }
+      for(i in 1:lenf) {
+          score[i] <- LIR.AIC(theta_list[[i]], as.function(fun_list[[i]]), obs$ni, obs$nj, obs$m, obs$tau, ..., mtau=mtau, MCLE=MCLE)
         }
       }
     } else if (criterion %in% c('CLICa', 'CLICb')) {
@@ -372,7 +368,7 @@ LIR.modelSelect <-
               as.function(grad_list[[i]]),
               as.function(hessian_list[[i]]),
               data,
-              t,
+              tp,
               ...,
               MCLE = MCLE,
               B = B,
@@ -389,8 +385,7 @@ LIR.modelSelect <-
               as.function(grad_list[[i]]),
               as.function(hessian_list[[i]]),
               data,
-              t,
-              `T`,
+              tp,
               ...,
               MCLE = MCLE,
               B = B,
@@ -406,7 +401,7 @@ LIR.modelSelect <-
     if (verbose) {
       if (!MCLE)
         theta <-
-          LIR.MCLE(theta_list[[best_idx]], as.function(fun_list[[best_idx]]), data, t, ..., verbose = FALSE)
+          LIR.MCLE(theta_list[[best_idx]], as.function(fun_list[[best_idx]]), data, tp, ..., verbose = FALSE)
       return(
         list(
           best = model_list[[best_idx]],

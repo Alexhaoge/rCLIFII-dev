@@ -10,7 +10,7 @@
 #'
 #' @param theta Parameter to estimate.
 #' @param tau Lagged time \eqn{\tau}.
-#' @param ... extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
 #'
 #' @details
 #' In model A, it is assumed that no migration occurs and population N remains constant.
@@ -30,7 +30,7 @@
 #' @export
 #'
 #' @examples
-LIR.model.A <- function(theta, tau, ...) {
+LIR.model.A <- function(theta, tau, model_args = list()) {
   return(theta)
 }
 
@@ -39,14 +39,14 @@ LIR.model.A <- function(theta, tau, ...) {
 #'
 #' @param theta Parameter to estimate.
 #' @param tau Lagged time \eqn{\tau}.
-#' @param ... extra arguments to be passed to gradient function
+#' @param model_args extra arguments to be passed to gradient function
 #'
 #' @return vector
 #' @export
 #' @rdname grad
 #'
 #' @examples
-LIR.grad.A <- function(theta, tau, ...) {
+LIR.grad.A <- function(theta, tau, model_args = list()) {
   return(c(1))
 }
 
@@ -55,32 +55,32 @@ LIR.grad.A <- function(theta, tau, ...) {
 #'
 #' @param theta Parameter to estimate.
 #' @param tau Lagged time \eqn{\tau}.
-#' @param ... extra arguments to be passed to hessian function
+#' @param model_args extra arguments to be passed to hessian function
 #'
 #' @return A symmetric matrix.
 #' @rdname hessian
 #' @export
 #'
 #' @examples
-LIR.hessian.A <- function(theta, tau, ...) {
+LIR.hessian.A <- function(theta, tau, model_args = list()) {
   return(matrix(0, nrow = 1, ncol = 1))
 }
 
 #' @rdname model
 #' @export
-LIR.model.B <- function(theta, tau, ...) {
+LIR.model.B <- function(theta, tau, model_args = list()) {
   return(theta[1] * exp(-theta[2]*tau))
 }
 
 #' @rdname grad
 #' @export
-LIR.grad.B <- function(theta, tau, ...) {
+LIR.grad.B <- function(theta, tau, model_args = list()) {
   return(c(1, -theta[1] * tau) * exp(-theta[2]*tau))
 }
 
 #' @rdname hessian
 #' @export
-LIR.hessian.B <- function(theta, tau, ...) {
+LIR.hessian.B <- function(theta, tau, model_args = list()) {
   return(matrix(
     c(0, -tau, -tau, theta[1] * tau^2) * exp(-theta[2] * tau),
     nrow = 2,
@@ -90,18 +90,18 @@ LIR.hessian.B <- function(theta, tau, ...) {
 
 #' @rdname model
 #' @export
-LIR.model.C <- function(theta, tau, ...) {
+LIR.model.C <- function(theta, tau, model_args = list()) {
   return(theta[1]*exp(-theta[2]*tau) + theta[3])
 }
 
 #' @rdname grad
 #' @export
-LIR.grad.C <- function(theta, tau, ...) {
+LIR.grad.C <- function(theta, tau, model_args = list()) {
   return(c(exp(-theta[2]*tau), -theta[1] * tau * exp(-theta[2]*tau), 1))
 }
 
 #' @rdname hessian
-LIR.hessian.C <- function(theta, tau, ...) {
+LIR.hessian.C <- function(theta, tau, model_args = list()) {
   return(matrix(
     c(0, -tau, 0, -tau, theta[1] * tau^2, 0, 0, 0, 0) * exp(-theta[2] * tau),
     nrow = 3,

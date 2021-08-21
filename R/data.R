@@ -132,64 +132,48 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
 #' @param data Matrix of identification with row number equal to population
 #'   and column number equal to observation.
 #' @param tp List like time of observation. Default NULL, must given if tau is true
-#' @param require_tau If true, return tau
-#' @param require_n If true, return n
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be calculated.
 #'
 #' @return List of lagged identification number for each observation pair.
 #' @export
 #'
 #' @examples
-LIR.pairwise <- function(data, tp = NULL, require_tau = TRUE, require_n = TRUE) {
+LIR.pairwise <- function(data, tp = NULL, mtau = Inf) {
   lent <- length(tp)
+  tp <- sort(tp)
   if (ncol(data) != lent)
     stop("Number of data columns does not match with length of t")
-  obs  <- list()
-  obs[["m"]] <- unlist(
-    sapply(1:(lent-1), FUN=function(i) {
-      sapply((i+1):lent, FUN = function(j){
-        sum((data[, i] == data[, j]) * (data[, i] != 0))
-      })
-    })
-  )
-  if (require_tau) {
-    if (is.null(tp))
-      stop("No observation time provided to calculate tau")
-    obs[["tau"]] <- unlist(
-      sapply(1:(lent-1), FUN=function(i) {
-        sapply((i+1):lent, FUN = function(j){return(tp[j] - tp[i])})
-      })
-    )
+  m <- c()
+  ni <- c()
+  nj <- c()
+  tau <- c()
+  k <- 1
+  for (i in 1:(lent-1)){
+    for (j in (i+1):lent)
+      if (tp[j] - tp[i] <= mtau){
+        m[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
+        tau[k] <- tp[j] - tp[i]
+        ni[k] <- n[i]
+        nj[k] <- n[j]
+        k <- k + 1
+      }
   }
-  if (require_n) {
-    n <- colSums(data)
-    obs[["ni"]] <- unlist(
-      sapply(1:(lent-1), FUN=function(i) {
-        sapply((i+1):lent, FUN = function(j){n[i]})
-      })
-    )
-    obs[["nj"]] <- unlist(
-      sapply(1:(lent-1), FUN=function(i) {
-        sapply((i+1):lent, FUN = function(j){n[j]})
-      })
-    )
-  }
-  return(obs)
+  return(list(m=m, ni=ni, nj=nj, tau=tau))
 }
+
 
 #' Non-parametric estimation of LIR
 #'
 #' @param data
-#' @param n
 #' @param tp
 #'
 #' @return
 #' @export
 #'
 #' @examples
-
-non.lir <- function(data, n, tp) {
-
-
+non.lir <- function(data, tp, mtau = Inf) {
+  n <- colSums(data)
   lent <- length(tp)
   tp <- sort(tp)
   tT <- tp[lent]
@@ -210,7 +194,6 @@ non.lir <- function(data, n, tp) {
       R.n[tauij[k]] <- n[i]*n[j] + R.n[tauij[k]]
       k <- k + 1
     }
-
   }
 
   R.tauij <- R.m[tauij]/R.n[tauij]
@@ -242,27 +225,4 @@ LIR.bootstrap <- function(data, seed = NULL) {
   n <- nrow(data)
   return(rbind(data[sample(1:n, n, replace=TRUE),]))
 }
-
-# LIR.plotLIR <- function(data, Time, n, t, fun.R.tau, ..., title = NULL) {
-#   # TODO: codes here is slow and need cleaning
-#   R.m <- rep(0,Time)
-#   R.n <- rep(0,Time)
-#   m <- c()
-#   tau <- c()
-#   k <- 1
-#   for (i in 1:(length(t)-1)){
-#     for (j in (i+1):length(t)){
-#       m[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
-#       tau[k] <- t[j]-t[i]
-#       R.m[tau[k]] <- R.m[tau[k]] + m[k]
-#       R.n[tau[k]] <- n[i]*n[j] + R.n[tau[k]]
-#       k <- k + 1
-#     }
-#   }
-#   R.tau <- R.m[tau]/R.n[tau]
-#   plot(tau, R.tau,ylim=c(0,0.02) ,ylab="Lagged Identification Rates", xlab="Time lag")
-#   y = sapply(seq(Time), function(x){fun.R.tau(x, ...)})
-#   lines(y, col='red', lwd=1.5)
-#   legend('topright', title)
-# }
 

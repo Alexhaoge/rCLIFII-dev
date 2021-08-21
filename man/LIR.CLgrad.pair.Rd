@@ -31,8 +31,5 @@ vector with same length as theta}
 A 1D vector with same length as theta
 }
 \description{
-
-}
-\details{
-
+Gradient of composite likelihood for pairwise input
 }

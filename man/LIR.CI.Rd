@@ -47,11 +47,11 @@ Estimate of LIR using MCLE is asymptotically normal so here bootstrap is applied
 \examples{
 # Example of confidence interval of MCLE
 # Set observation time
-t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
+tp <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 # Generate observation matrix with model C
-data <- LIR.simulate.C(300, 100, 40, t, 0.08, 0.04)
+data <- LIR.simulate.C(300, 100, 40, tp, 0.08, 0.04)
 # CI
-LIR.CI(c(0.001, 0.001, 0.001), LIR.model.C, data, t, B = 10)
+LIR.CI(c(0.001, 0.001, 0.001), LIR.model.C, data, tp, B = 10)
 #              [,1]       [,2]        [,3]
 # lower 0.005654683 0.08993638 0.003217763
 # upper 0.008583934 0.33458409 0.003946556
