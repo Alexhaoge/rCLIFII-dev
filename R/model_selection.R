@@ -1,7 +1,7 @@
 
 # AIC/BIC/QAIC ------------------------------------------------------------
 
-# Base function for AIC/BIC/QAIC. Should not export
+# Base function for AIC/BIC/QAIC. Return the opposite(-) of CL. Should not export
 .LIR.XIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
   if (MCLE) {
     return(-2 * LIR.CL.pair(theta, model, ni, nj, m, tau, ...))
@@ -33,9 +33,9 @@
 #' `LIR.QAIC` and `LIR.QAIC.pair`(deprecated) is for QAIC.
 #' \deqn{AIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}+2k}
 #' \deqn{QAIC(\hat{\theta}_{LIR})=-2\sum_{t_i \in \tau_0}\sum_{\tau \in M}\{cl_{ij}(\hat{\theta}_{LIR})\}/\hat{c}+2k}
-#' Here \eqn{k} is `length(theta)`, T is total study time, \eqn{\hat{c}} is the
-#' variance inflation factor estimated from the ratio of the goodness-of-fit
-#' \eqn{\chi^2}-statistic to its degrees of freedom.
+#' Here \eqn{k} is `length(theta)`, T is number of observation time,
+#' \eqn{\hat{c}} is the variance inflation factor estimated from the
+#' ratio of the goodness-of-fit \eqn{\chi^2}-statistic to its degrees of freedom.
 #'
 #' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}. If param `MCLE` is TRUE,
 #' this is the MCLE, otherwise the initial value for optimizer. Theta is required
@@ -48,6 +48,7 @@
 #' @param model_args Additional parameters passed to model
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be used to calculate composite likelihood.
+#' @param c VIF(Variance Inflation Factor) for QAIC
 #' @param ni Number of individuals at each observation
 #' @param nj Number of individuals at each lagged observation
 #' @param m Vector of lagged identification for all observation pair
@@ -88,7 +89,7 @@ LIR.QAIC.pair <- function(c, theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
   # NOTE: df需要使用参数最多的
   cl <- .LIR.XIC.pair(theta, model, ni, nj, m, tau, ..., MCLE = MCLE)
   # tab <- table(tau)
-  # ltab <- tab
+  # ltab <- length(tab)
   # df <- ltab - length(theta) - 1
   # x2 <- 0
   # tmp <- c()
