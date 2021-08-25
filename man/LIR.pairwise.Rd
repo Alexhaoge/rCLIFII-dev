@@ -2,9 +2,9 @@
 % Please edit documentation in R/data.R
 \name{LIR.pairwise}
 \alias{LIR.pairwise}
-\title{Calculate lagged identification of each observation pair.}
+\title{Calculate pairwise data and non-parametric estimate of LIR.}
 \usage{
-LIR.pairwise(data, tp = NULL, require_tau = TRUE, require_n = TRUE)
+LIR.pairwise(data, tp = NULL, mtau = Inf)
 }
 \arguments{
 \item{data}{Matrix of identification with row number equal to population
@@ -12,13 +12,20 @@ and column number equal to observation.}
 
 \item{tp}{List like time of observation. Default NULL, must given if tau is true}
 
-\item{require_tau}{If true, return tau}
-
-\item{require_n}{If true, return n}
+\item{mtau}{The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+greater than `mtau`, it will not be calculated.}
 }
 \value{
-List of lagged identification number for each observation pair.
+List of lagged identification pair and non-parametric estimate of LIR.
+\describe{
+  \item{m}{Lagged identification for each pair \eqn{m_{ij}}.}
+  \item{tauij}{Lagged time for each pair. \eqn{\tau_{ij}=tp_i-tp_j}}
+  \item{ni}{The number of identified individual of the former one in each pair.}
+  \item{nj}{The number of identified individual of the latter one in each pair.}
+  \item{Rtau}{Non-parametric estimate of \eqn{R_{\tau}} for every lagged time \eqn{\tau}.}
+  \item{tau}{All possible lagged time \eqn{\tau}.}
+}
 }
 \description{
-Calculate lagged identification of each observation pair. Number of observation is guessed by the column number of input matrix
+
 }

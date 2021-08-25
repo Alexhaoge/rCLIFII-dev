@@ -6,13 +6,15 @@
 \usage{
 LIR.modelSelect(
   data,
-  t,
+  tp,
   theta_list = list(rep(0.1, 1), rep(0.001, 2), rep(0.001, 3)),
   model_list = list("A", "B", "C"),
   grad_list = list("A", "B", "C"),
   hessian_list = list("A", "B", "C"),
   criterion = "CLICa",
   ...,
+  model_args = list(),
+  mtau = Inf,
   MCLE = FALSE,
   B = 500,
   cl = NULL,
@@ -23,7 +25,7 @@ LIR.modelSelect(
 \arguments{
 \item{data}{Observation matrix}
 
-\item{t}{List-like observation time(1d vector)}
+\item{tp}{List-like observation time(1d vector)}
 
 \item{theta_list}{List of Parameter to calculate \eqn{\hat{R_{\tau}}}
 correspond to `model_list`. If param `MCLE` is TRUE,
@@ -38,24 +40,32 @@ package's built-in models and will be replaced by `LIR.model.A`,
 \item{grad_list}{List of gradients correspond to candidate models.
 Only function or 'A'/'B'/'C' is accepted.'A', 'B', 'C' are package's built-in
 models and will be replaced by `LIR.grad.A`, `LIR.grad.B`, `LIR.grad.B`, respectively.
-Only required for CLICa/CLICb.}
+Only required for CLICa/CLICb. Default list('A', 'B', 'C').}
 
-\item{hessian_list}{List of Hessian correspond to candidate models. Default list('A', 'B', 'C').
+\item{hessian_list}{List of Hessian correspond to candidate models.
 Only function or 'A'/'B'/'C' is accepted.'A', 'B', 'C' will be replaced by
-`LIR.hessian.A`, `LIR.hessian.B`, `LIR.hessian.B`, respectively. Only required for CLICa/CLICb.}
+`LIR.hessian.A`, `LIR.hessian.B`, `LIR.hessian.B`, respectively.
+Only required for CLICa/CLICb. Default list('A', 'B', 'C').}
 
 \item{criterion}{Model selection criterion. Should be one of 'AIC', 'BIC',
-'QAIC', 'CLICa' and 'CLICb'. Default list('A', 'B', 'C').}
+'QAIC', 'CLICa' and 'CLICb'.}
 
-\item{...}{Additional parameters passed to model, or upper/lower bound and optimize
-argument when calculating MCLE.}
+\item{...}{Additional optimizer parameters for MCLE.}
 
-\item{MCLE}{If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
+\item{model_args}{Additional parameters passed to model}
+
+\item{mtau}{The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+greater than `mtau`, it will not be used to calculate composite likelihood.
+If `mtau` is less than zero, all pairs will be used. Default -1.0.}
+
+\item{MCLE}{If TRUE then `theta` is the MCLE, otherwise `theta` will be used as
 the initial value for optimizer. Boolean, default FALSE.}
 
 \item{B}{Bootstrap's repeat sampling times}
 
-\item{cl}{Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]}
+\item{cl}{Cluster to use for CLICa/b, Default NULL. If NULL, a new cluster
+will be created by @seealso [makeCluster()] and closed after function finished.
+If not NULL, the function will use the given cluster and will not close it.}
 
 \item{ncores}{Number of processors to use. Default -1(which means all available cores).
 This argument will be suppressed if cl is not NULL.}
@@ -88,12 +98,12 @@ list format user-defined function will be convert to function by as.function(lis
 \examples{
 # Example of model selection
 # Set observation time
-t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
+tp <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 # Generate observation matrix with model C
-data <- move.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
+data <- move.simulate.C(300, 100, 605, 40, 0.08, 0.04)
 # Model Selection
 # Initial value of theta and boundary(when length(theta)==1) are very important
-ms <- LIR.modelSelect(data, t, B=4, MCLE=FALSE, lower=0.0005, upper=0.09)
+ms <- LIR.modelSelect(data, tp, B=4, MCLE=FALSE, lower=0.0005, upper=0.09)
 ms$score
 # [1] 1.800000e+13 1.099621e+04 1.074243e+04
 ms$best

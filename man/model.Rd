@@ -7,18 +7,18 @@
 \alias{LIR.model.C}
 \title{LIR model A/B/C}
 \usage{
-LIR.model.A(theta, tau, ...)
+LIR.model.A(theta, tau, model_args = list())
 
-LIR.model.B(theta, tau, ...)
+LIR.model.B(theta, tau, model_args = list())
 
-LIR.model.C(theta, tau, ...)
+LIR.model.C(theta, tau, model_args = list())
 }
 \arguments{
 \item{theta}{Parameter to estimate.}
 
 \item{tau}{Lagged time \eqn{\tau}.}
 
-\item{...}{extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}}
+\item{model_args}{extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}}
 }
 \value{
 \eqn{R_{\tau}}

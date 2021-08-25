@@ -3,34 +3,40 @@
 #' @title Composite likelihood for LIR
 #'
 #' @description
-#' This CL function requires a sample format of pairwise lagged identification,
-#' which is a list-like data containing lagged identification of of all pairs of
-#' observation. In gerneral cases we should use `LIR.CL` which is implemented
-#' by C++ with time complexity of \eqn{\Theta(length(tp)^2)}. `LIR.CL.pair`
+#' `LIR.CL` and `LIR.CL.pair` is the function to calculate composite likelihood
+#' with a given LIR model. In general cases we should use `LIR.CL` which takes
+#' observation matrix `data` and time `tp`. `LIR.CL.pair`
 #' is recommended when total observation time is very small and pairwise lagged
-#' identification is easy to pre-calculate through `LIR.pairwise()`.
+#' identification is easy to pre-calculate through `LIR.pairwise()`. Note that
+#' `LIR.CL.pair` does not support "A"/"B"/"C" for argument `model`.
 #' The notation of the estimation is \eqn{\hat{R_{\tau}}}.
 #'
-#' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}
-#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
-#'   that takes `theta`, `tau_i`(and other arguments if necessary) and return a
-#'   numeric number
+#' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}. 1D vector.
+#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+#'   are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+#'   a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+#'   CL. Otherwise, a user-define model should function be given and it should
+#'   be a function that takes theta, tau_i(and other arguments in model_args
+#'   if necessary) and return a numeric number
 #' @param data Observation matrix
 #' @param tp List-like observation time(1d vector)
 #' @param ni Number of individuals of the former observation at each lagged time pair.
 #' @param nj Number of individuals of the latter observation at each lagged time pair.
 #' @param m vector of total lagged identification number for all lagged time pair
 #' @param tau vector of time interval of lagged identification
+#' @param model_args extra arguments to be passed to model to calculate
+#'   \eqn{\hat{R_{\tau}}}. If there are no additional parameters, pass a empty
+#'   list or `NULL`.
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be used to calculate composite likelihood.
-#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#'   If `mtau` is less than zero, all pairs will be used. Default -1.0.
+#' @return Likelihood score(numeric). Inf if theta out of [0,1]
 #'
-#' @return minus Likelihood score(numeric). Inf if theta out of [0,1]
 #' @export
 #' @rdname CL
 #'
 #' @examples
-LIR.CL.pair <- function(theta, model, ni, nj, m, tau, model_args = list()) {
+LIR.CL.pair <- function(theta, model, ni, nj, m, tau, model_args) {
   R_tau <- sapply(tau, function(t){model(theta=theta, tau=t, model_args)})
   nR_tau = R_tau * nj
   if (min(nR_tau)<=0) return(-9e12);
@@ -45,9 +51,12 @@ LIR.CL.pair <- function(theta, model, ni, nj, m, tau, model_args = list()) {
 #' @title Gradient of composite likelihood
 #'
 #' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}
-#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
-#'   that takes theta, tau_i(and other arguments if necessary) and return a
-#'   numeric number
+#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+#'   are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+#'   a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+#'   CL. Otherwise, a user-define model should function be given and it should
+#'   be a function that takes theta, tau_i(and other arguments in model_args
+#'   if necessary) and return a numeric number
 #' @param grad Gradient of the model. Should be a function that takes theta,
 #'   tau_i(and other arguments if necessary) and return a 1D
 #'   vector with same length as theta
@@ -57,15 +66,20 @@ LIR.CL.pair <- function(theta, model, ni, nj, m, tau, model_args = list()) {
 #' @param nj Number of individuals of the latter observation at each lagged time pair.
 #' @param m vector of total lagged identification number for all lagged time pair
 #' @param tau vector of time interval of lagged identification
-#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param model_args extra arguments to be passed to model to calculate
+#'   \eqn{\hat{R_{\tau}}}. If there are no additional parameters, pass a empty
+#'   list or `NULL`.
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be used to calculate composite likelihood.
-#' @return A 1D vector with same length as theta
+#'   If `mtau` is less than zero, all pairs will be used. Default -1.0.
+#' @return A 1D gradient vector with same length as theta
+#' @note `LIR.CLgrad.pair` does not support "A"/"B"/"C" for argument `model`.
+#'
 #' @rdname CLgrad
 #' @export
 #'
 #' @examples
-LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, model_args = list()) {
+LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, model_args) {
   R_tau <- sapply(tau, function(t){model(theta, t, model_args)})
   R_tau_grad <- t(sapply(tau, function(t){grad(theta, t, model_args)}))
   if (length(theta) == 1)
@@ -79,9 +93,12 @@ LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, model_args = lis
 #' @title Hessian matrix of composite likelihood
 #'
 #' @param theta Parameter to calculate \eqn{\hat{R_{\tau}}}
-#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
-#'   that takes theta, tau_i(and other arguments if necessary) and return a
-#'   numeric number
+#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+#'   are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+#'   a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+#'   CL. Otherwise, a user-define model should function be given and it should
+#'   be a function that takes theta, tau_i(and other arguments in model_args
+#'   if necessary) and return a numeric number
 #' @param grad Gradient of the model. Should be a function that takes theta,
 #'   tau_i(and other arguments if necessary) and return a 1D
 #'   vector with same length as theta
@@ -94,16 +111,20 @@ LIR.CLgrad.pair <- function(theta, model, grad, ni, nj, m, tau, model_args = lis
 #' @param nj Number of individuals of the latter observation at each lagged time pair.
 #' @param m vector of total lagged identification number for all lagged time pair
 #' @param tau vector of time interval of lagged identification
-#' @param model_args extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}
+#' @param model_args extra arguments to be passed to model to calculate
+#'   \eqn{\hat{R_{\tau}}}. If there are no additional parameters, pass a empty
+#'   list or `NULL`.
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be used to calculate composite likelihood.
+#'   If `mtau` is less than zero, all pairs will be used. Default -1.0.
+#' @return A square symmetric hessian matrix with length(theta) rows and columns.
+#' @note `LIR.CLhessian.pair` does not support "A"/"B"/"C" for argument `model`.
 #'
-#' @return A square symmetric matrix with length(theta) rows and columns.
 #' @rdname CLhessian
 #' @export
 #'
 #' @examples
-LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, model_args = list()) {
+LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, model_args) {
   R_tau <- sapply(tau, function(t) {model(theta, t, model_args)})
   R_tau_grad <- sapply(tau, function(t) {grad(theta, t, model_args)}, simplify = 'matrix')
   if (length(theta) == 1)
@@ -125,17 +146,8 @@ LIR.CLhessian.pair <- function(theta, model, grad, hessian, ni, nj, m, tau, mode
 #' @rdname MCLE
 #' @export
 LIR.MCLE.pair <-
-  function(theta,
-           model,
-           ni,
-           nj,
-           m,
-           tau,
-           model_args = list(),
-           lower = 0.0,
-           upper = 1.0,
-           optimizer = NULL,
-           opt_arg = list(),
+  function(theta, model, ni, nj, m, tau, model_args = list(),
+           lower = 0.0, upper = 1.0, optimizer = NULL, opt_arg = list(),
            verbose = FALSE) {
     clf <- function(theta_) { -LIR.CL.pair(theta_, model, ni, nj, m, tau, model_args) }
     if (base::is.null(optimizer)) {
@@ -156,19 +168,23 @@ LIR.MCLE.pair <-
 #' @title Maximal Composite Likelihood Estimate
 #'
 #' @description
-#' `LIR.MCLE` is for observation matrix input. If number of observation(length(t))
-#' is less than 20000, pairwise data will be pre-calculated and `LIR.CL.pair`
-#' will be used. Otherwise pairwise lagged identification will be calculated
-#' separately at every iteration.
-#' `LIR.MCLE.pair` is for pairwise list data input.(Deprecated)
+#' `LIR.MCLE` is for observation matrix input. \\
+#' `LIR.MCLE.pair` is for pairwise list data input and does not support
+#' "A"/"B"/"C" for argument `model`.(Deprecated)
 #'
 #' @param theta Initial value for parameters to estimate
-#' @param model Model to calculate \eqn{\hat{R_{\tau}}}
+#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+#'   are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+#'   a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+#'   CL. Otherwise, a user-define model should function be given and it should
+#'   be a function that takes theta, tau_i(and other arguments in model_args
+#'   if necessary) and return a numeric number
 #' @param data Observation matrix
 #' @param tp List-like observation time(1d vector)
 #' @param model_args Additional parameters passed to model
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be used to calculate composite likelihood.
+#'   If `mtau` is less than zero, all pairs will be used. Default -1.0.
 #' @param lower Lower bound for estimation
 #' @param upper Upper bound for estimation
 #' @param optimizer Optimizer to use. Default NULL(which means @seealso [optim()]
@@ -176,8 +192,9 @@ LIR.MCLE.pair <-
 #' to wrap this optimizer so that it has the same parameter format as optim().
 #' @param opt_arg Control list for optimizer. Default empty list
 #' @param verbose Return detailed output. Default FALSE.
-#'
 #' @return If verbose is TRUE return the full result from optimizer otherwise return MCLE only.
+#' @note `LIR.MCLE.pair` does not support "A"/"B"/"C" for argument `model`.
+#'
 #' @export
 #' @rdname MCLE
 #'
@@ -186,26 +203,28 @@ LIR.MCLE.pair <-
 #' # Set observation time
 #' t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 #' # Generate observation matrix with model C
-#' data <- move.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
+#' data <- LIR.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
 #' # MCLE
 #' LIR.MCLE(rep(0.001, 3), LIR.model.C, data, t)
 #' # [1] 0.007119308 0.212260232 0.003582160
 #'
 LIR.MCLE <-
-  function(theta,
-           model,
-           data,
-           tp,
-           model_args = list(),
-           mtau = Inf,
-           lower = 0.0,
-           upper = 1.0,
-           optimizer = NULL,
-           opt_arg = list(),
+  function(theta, model, data, tp, model_args = list(), mtau = -1,
+           lower = 0.0, upper = 1.0, optimizer = NULL, opt_arg = list(),
            verbose = FALSE) {
     if (length(tp) != ncol(data))
       stop("Number of observation not match")
-    clf <- function(theta_) {-LIR.CL(theta, model, data, tp, model_args, mtau)}
+    if (is.function(model)){
+      clf <- function(theta_) {
+        -LIR.CL(theta_, model, data, tp, model_args, mtau)
+      }
+    } else if (is.character(model)){
+      clf <- function(theta_) {
+        .Call(`_rCLIFII_LIR_CL_builtin`, theta_, model, data, tp, mtau)
+      }
+    } else {
+      stop('Only function or "A"/"B"/"C" is allowed for argument model')
+    }
     if (base::is.null(optimizer)) {
       if (length(theta) == 1)
         opt_res <- stats::optim(par = theta, fn = clf, method = 'Brent',
@@ -228,13 +247,17 @@ LIR.MCLE <-
 #' Estimate of LIR using MCLE is asymptotically normal so here bootstrap is applied to estimate the variance.
 #'
 #' @param theta initial value of estimate for MCLE iteration
-#' @param model Model to calculate \eqn{\hat{R_{\tau}}}
+#' @param model Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+#'   are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+#'   a faster built-in function (instead of LIR.model.A/B/C) is used to caculate
+#'   CL. Otherwise, a user-define model should function be given.
 #' @param data Observation matrix
 #' @param tp List-like observation time(1d vector)
 #' @param ... Additional parameters passed to the optimizer of MCLE
 #' @param model_args Additional parameters passed to model
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be used to calculate composite likelihood.
+#'   If `mtau` is less than zero, all pairs will be used. Default -1.0.
 #' @param B Bootstrap's repeat sampling times
 #' @param cl Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]
 #' @param ncores Number of processors to use. Default -1(which means all available cores).
@@ -259,17 +282,8 @@ LIR.MCLE <-
 #' # upper 0.008583934 0.33458409 0.003946556
 #'
 LIR.CI <-
-  function(theta,
-           model,
-           data,
-           tp,
-           ...,
-           model_args = list(),
-           mtau = Inf,
-           B = 500,
-           cl = NULL,
-           ncores = -1,
-           alpha = 0.05) {
+  function(theta, model, data, tp, ..., model_args = list(), mtau = -1,
+           B = 500, cl = NULL, ncores = -1, alpha = 0.05) {
     B <- as.integer(B)
     if (B <= 1)
       stop("B must be a positive integer bigger than 1")
@@ -300,6 +314,7 @@ LIR.CI <-
       std <- sqrt(diag(stats::var(t(theta_boot))))
       ci <- rbind(theta - z * std, theta + z * std)
       rownames(ci) <- c('lower', 'upper')
+      colnames(ci) <-
       return(ci)
     }
   }

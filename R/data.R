@@ -125,9 +125,12 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
   return(data)
 }
 
-#' @title Calculate lagged identification of each observation pair.
+#' @title Calculate pairwise data and non-parametric estimate of LIR.
 #' @description
-#' Calculate lagged identification of each observation pair. Number of observation is guessed by the column number of input matrix
+#' Calculate lagged identification of each observation pair.
+#' Number of observation is the column number of input matrix.
+#' Non-parametric estimate of LIR:
+#' \deqn{\hat{R}(\tau)=\frac{\sum_{i,j|(tp_j-tp_i)=\tau}m_{ij}}{\sum_{i,j|(tp_j-tp_i)=\tau}n_i n_j}
 #'
 #' @param data Matrix of identification with row number equal to population
 #'   and column number equal to observation.
@@ -135,7 +138,15 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
 #' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
 #'   greater than `mtau`, it will not be calculated.
 #'
-#' @return List of lagged identification number for each observation pair.
+#' @return List of lagged identification pair and non-parametric estimate of LIR.
+#' \describe{
+#'   \item{m}{Lagged identification for each pair \eqn{m_{ij}}.}
+#'   \item{tauij}{Lagged time for each pair. \eqn{\tau_{ij}=tp_i-tp_j}}
+#'   \item{ni}{The number of identified individual of the former one in each pair.}
+#'   \item{nj}{The number of identified individual of the latter one in each pair.}
+#'   \item{Rtau}{Non-parametric estimate of \eqn{R_{\tau}} for every lagged time \eqn{\tau}.}
+#'   \item{tau}{All possible lagged time \eqn{\tau}.}
+#' }
 #' @export
 #'
 #' @examples
@@ -147,63 +158,21 @@ LIR.pairwise <- function(data, tp = NULL, mtau = Inf) {
   m <- c()
   ni <- c()
   nj <- c()
-  tau <- c()
+  tauij <- c()
   k <- 1
   for (i in 1:(lent-1)){
     for (j in (i+1):lent)
       if (tp[j] - tp[i] <= mtau){
         m[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
-        tau[k] <- tp[j] - tp[i]
+        tauij[k] <- tp[j] - tp[i]
         ni[k] <- n[i]
         nj[k] <- n[j]
         k <- k + 1
       }
   }
-  return(list(m=m, ni=ni, nj=nj, tau=tau))
-}
-
-
-#' Non-parametric estimation of LIR
-#'
-#' @param data
-#' @param tp
-#'
-#' @return
-#' @export
-#'
-#' @examples
-non.lir <- function(data, tp, mtau = Inf) {
-  n <- colSums(data)
-  lent <- length(tp)
-  tp <- sort(tp)
-  tT <- tp[lent]
-
-  R.m <- rep(0, tT)
-  R.n <- rep(0, tT)
-  mij <- c()
-  nij <- c()
-  tauij <- c()
-
-  k <- 1
-  for (i in 1:(lent-1)){
-    for (j in (i+1):lent){
-      mij[k] <- sum((data[, i] == data[, j]) * (data[, i] != 0))
-      nij[k] <- n[i]*n[j]
-      tauij[k] <- tp[j] - tp[i]
-      R.m[tauij[k]] <- R.m[tauij[k]] + mij[k]
-      R.n[tauij[k]] <- n[i]*n[j] + R.n[tauij[k]]
-      k <- k + 1
-    }
-  }
-
-  R.tauij <- R.m[tauij]/R.n[tauij]
-  tau <- unique(tauij)
-  R.tau <- R.m[tau]/R.n[tau]
-
-  R.dat <- list(R.tau=R.tau, tau=tau, R.m=R.m, R.n=R.n,
-                mij=mij, nij=nij, tauij=tauij)
-
-  return(R.dat)
+  tau <- sort(unique(tauij))
+  Rtau <- sapply(tau, function(t){sum(m[tauij==t])/sum(ni[tauij==t]*nj[tauij==t])})
+  return(list(m=m, tauij=tauij, ni=ni, nj=nj, Rtau=Rtau, tau=tau))
 }
 
 #' @title Bootstrap on individuals

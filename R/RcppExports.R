@@ -3,7 +3,40 @@
 
 #' @export
 #' @rdname CL
-LIR.CL <- function(theta) {
-    .Call(`_rCLIFII_LIR_CL`, theta)
+LIR.CL <- function(theta, model, data, tp, model_args, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_CL`, theta, model, data, tp, model_args, mtau)
+}
+
+#' @export
+#' @rdname CLgrad
+LIR.CLgrad <- function(theta, model, grad, data, tp, model_args, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_Grad`, theta, model, grad, data, tp, model_args, mtau)
+}
+
+#' @export
+#' @rdname CLhessian
+LIR.CLhessian <- function(theta, model, grad, hessian, data, tp, model_args, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_Hessian`, theta, model, grad, hessian, data, tp, model_args, mtau)
+}
+
+#' Function for VIF(Variance Inflation Factor) in QAIC
+#' 
+#' @description
+#' \deqn{\hat{c}=\chi^2/df=\sum_{i,\tau}\frac{(m_{t_i,t_i+\tau}-E(m_{t_i,t_i+\tau}))^2}{E(m_{t_i,t_i+\tau})}/(unique(\tau)-k-1)}
+#' 
+#' @note This function has memory complexity of O(N^2) and may suffer from out-of-memory
+#' error if observation number is very large.
+#'
+#' @param data Observation matrix
+#' @param tp List-like observation time(1d vector)
+#' @param k the number of variable in the most general model
+#' @param mtau The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+#'   greater than `mtau`, it will not be used to calculate composite likelihood.
+#'   If `mtau` is less than zero, all pairs will be used. Default -1.0.
+#' @rdname chat
+#' @export
+#'
+LIR.chat <- function(data, tp, k, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_chat`, data, tp, k, mtau)
 }
 

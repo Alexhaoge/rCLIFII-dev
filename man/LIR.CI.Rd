@@ -10,6 +10,8 @@ LIR.CI(
   data,
   tp,
   ...,
+  model_args = list(),
+  mtau = Inf,
   B = 500,
   cl = NULL,
   ncores = -1,
@@ -25,7 +27,13 @@ LIR.CI(
 
 \item{tp}{List-like observation time(1d vector)}
 
-\item{...}{Additional parameters passed to model}
+\item{...}{Additional parameters passed to the optimizer of MCLE}
+
+\item{model_args}{Additional parameters passed to model}
+
+\item{mtau}{The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+greater than `mtau`, it will not be used to calculate composite likelihood.
+If `mtau` is less than zero, all pairs will be used. Default -1.0.}
 
 \item{B}{Bootstrap's repeat sampling times}
 

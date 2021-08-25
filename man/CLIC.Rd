@@ -12,8 +12,10 @@ LIR.CLICa(
   grad,
   hessian,
   data,
-  t,
+  tp,
   ...,
+  model_args = list(),
+  mtau = Inf,
   MCLE = FALSE,
   B = 500,
   cl = NULL,
@@ -26,9 +28,10 @@ LIR.CLICb(
   grad,
   hessian,
   data,
-  t,
-  T,
+  tp,
   ...,
+  model_args = list(),
+  mtau = Inf,
   MCLE = FALSE,
   B = 500,
   cl = NULL,
@@ -54,22 +57,27 @@ with length(theta) rows and columns}
 
 \item{data}{Observation matrix}
 
-\item{t}{List-like observation time(1d vector)}
+\item{tp}{List-like observation time(1d vector)}
 
-\item{...}{Additional parameters passed to model, or upper/lower bound and optimize
-argument when calculating MCLE.}
+\item{...}{Additional optimizer parameters passed for MCLE.}
 
-\item{MCLE}{If TRUE param `theta` is the MCLE, otherwise `theta` will be used as
+\item{model_args}{Additional parameters passed to model}
+
+\item{mtau}{The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+greater than `mtau`, it will not be used to calculate composite likelihood.
+If `mtau` is less than zero, all pairs will be used. Default -1.0.}
+
+\item{MCLE}{If TRUE then `theta` is the MCLE, otherwise `theta` will be used as
 the initial value for optimizer. Boolean, default FALSE.}
 
 \item{B}{Bootstrap's repeat sampling times}
 
-\item{cl}{Cluster to use, Default NULL. If NULL, a new cluster will be created by @seealso [makeCluster()]}
+\item{cl}{Cluster to use, Default NULL. If NULL, a new cluster will be
+created by @seealso [makeCluster()] and closed after function finished.
+If not NULL, the function will use the given cluster and will not close it.}
 
 \item{ncores}{Number of processors to use. Default -1(which means all available cores).
 This argument will be suppressed if cl is not NULL.}
-
-\item{T}{Total study time. Required for CLICb.}
 }
 \value{
 CLIC score

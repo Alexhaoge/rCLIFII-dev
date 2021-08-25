@@ -5,9 +5,9 @@
 \alias{LIR.CL.pair}
 \title{Composite likelihood for LIR}
 \usage{
-LIR.CL(theta)
+LIR.CL(theta, model, data, tp, model_args, mtau = -1)
 
-LIR.CL.pair(theta, model, ni, nj, m, tau, ...)
+LIR.CL.pair(theta, model, ni, nj, m, tau, model_args)
 }
 \arguments{
 \item{theta}{Parameter to calculate \eqn{\hat{R_{\tau}}}}
@@ -16,6 +16,18 @@ LIR.CL.pair(theta, model, ni, nj, m, tau, ...)
 that takes `theta`, `tau_i`(and other arguments if necessary) and return a
 numeric number}
 
+\item{data}{Observation matrix}
+
+\item{tp}{List-like observation time(1d vector)}
+
+\item{model_args}{extra arguments to be passed to model to calculate
+\eqn{\hat{R_{\tau}}}. If there are no additional parameters, pass a empty
+list or `NULL`.}
+
+\item{mtau}{The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+greater than `mtau`, it will not be used to calculate composite likelihood.
+If `mtau` is less than zero, all pairs will be used. Default -1.0.}
+
 \item{ni}{Number of individuals of the former observation at each lagged time pair.}
 
 \item{nj}{Number of individuals of the latter observation at each lagged time pair.}
@@ -23,12 +35,6 @@ numeric number}
 \item{m}{vector of total lagged identification number for all lagged time pair}
 
 \item{tau}{vector of time interval of lagged identification}
-
-\item{...}{extra arguments to be passed to model to calculate \eqn{\hat{R_{\tau}}}}
-
-\item{data}{Observation matrix}
-
-\item{t}{List-like observation time(1d vector)}
 }
 \value{
 minus Likelihood score(numeric). Inf if theta out of [0,1]
@@ -36,7 +42,9 @@ minus Likelihood score(numeric). Inf if theta out of [0,1]
 \description{
 This CL function requires a sample format of pairwise lagged identification,
 which is a list-like data containing lagged identification of of all pairs of
-observation. This function is recommended when total observation time is very small and
-pairwise lagged identification is easy to pre-calculate through `LIR.pairwise()`.
+observation. In gerneral cases we should use `LIR.CL` which is implemented
+by C++ with time complexity of \eqn{\Theta(length(tp)^2)}. `LIR.CL.pair`
+is recommended when total observation time is very small and pairwise lagged
+identification is easy to pre-calculate through `LIR.pairwise()`.
 The notation of the estimation is \eqn{\hat{R_{\tau}}}.
 }

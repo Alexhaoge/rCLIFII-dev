@@ -7,18 +7,18 @@
 \alias{LIR.hessian.C}
 \title{Hessian matrix of model A/B/C}
 \usage{
-LIR.hessian.A(theta, tau, ...)
+LIR.hessian.A(theta, tau, model_args = list())
 
-LIR.hessian.B(theta, tau, ...)
+LIR.hessian.B(theta, tau, model_args = list())
 
-LIR.hessian.C(theta, tau, ...)
+LIR.hessian.C(theta, tau, model_args = list())
 }
 \arguments{
 \item{theta}{Parameter to estimate.}
 
 \item{tau}{Lagged time \eqn{\tau}.}
 
-\item{...}{extra arguments to be passed to hessian function}
+\item{model_args}{extra arguments to be passed to hessian function}
 }
 \value{
 A symmetric matrix.

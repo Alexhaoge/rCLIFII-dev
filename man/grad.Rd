@@ -7,18 +7,18 @@
 \alias{LIR.grad.C}
 \title{Gradient of model A/B/C}
 \usage{
-LIR.grad.A(theta, tau, ...)
+LIR.grad.A(theta, tau, model_args = list())
 
-LIR.grad.B(theta, tau, ...)
+LIR.grad.B(theta, tau, model_args = list())
 
-LIR.grad.C(theta, tau, ...)
+LIR.grad.C(theta, tau, model_args = list())
 }
 \arguments{
 \item{theta}{Parameter to estimate.}
 
 \item{tau}{Lagged time \eqn{\tau}.}
 
-\item{...}{extra arguments to be passed to gradient function}
+\item{model_args}{extra arguments to be passed to gradient function}
 }
 \value{
 vector

@@ -12,7 +12,7 @@ LIR.MCLE.pair(
   nj,
   m,
   tau,
-  ...,
+  model_args = list(),
   lower = 0,
   upper = 1,
   optimizer = NULL,
@@ -25,7 +25,8 @@ LIR.MCLE(
   model,
   data,
   tp,
-  ...,
+  model_args = list(),
+  mtau = Inf,
   lower = 0,
   upper = 1,
   optimizer = NULL,
@@ -38,15 +39,7 @@ LIR.MCLE(
 
 \item{model}{Model to calculate \eqn{\hat{R_{\tau}}}}
 
-\item{ni}{Number of individuals at each observation}
-
-\item{nj}{Number of individuals at each lagged observation}
-
-\item{m}{Vector of lagged identification for all observation pair}
-
-\item{tau}{Vector of time interval of lagged identification}
-
-\item{...}{Additional parameters passed to model}
+\item{model_args}{Additional parameters passed to model}
 
 \item{lower}{Lower bound for estimation}
 
@@ -63,29 +56,29 @@ to wrap this optimizer so that it has the same parameter format as optim().}
 \item{data}{Observation matrix}
 
 \item{tp}{List-like observation time(1d vector)}
+
+\item{mtau}{The maximum allowable lag time. If a lagged pair has time \eqn{\tau}
+greater than `mtau`, it will not be used to calculate composite likelihood.
+If `mtau` is less than zero, all pairs will be used. Default -1.0.}
 }
 \value{
 If verbose is TRUE return the full result from optimizer otherwise return MCLE only.
 }
 \description{
-`LIR.MCLE.pair` is for pairwise list data input.
 `LIR.MCLE` is for observation matrix input. If number of observation(length(t))
-is less than 20000, pairwise data will be pre-calculated `LIR.MCLE.pair` will
-be used. Otherwise pairwise lagged identification will be calculated separately
-at every iteration.
+is less than 20000, pairwise data will be pre-calculated and `LIR.CL.pair`
+will be used. Otherwise pairwise lagged identification will be calculated
+separately at every iteration.
+`LIR.MCLE.pair` is for pairwise list data input.(Deprecated)
 }
 \examples{
 # Example of MCLE
 # Set observation time
 t <- c(1:5, 51:55, 101:105, 501:505, 601:605)
 # Generate observation matrix with model C
-data <- move.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
+data <- LIR.simulate.C(300, 100, 605, 40, t, 0.08, 0.04)
 # MCLE
 LIR.MCLE(rep(0.001, 3), LIR.model.C, data, t)
 # [1] 0.007119308 0.212260232 0.003582160
-# Convert to pairwise data
-obs <- LIR.pairwise(data, t)
-# Pairwise MCLE
-LIR.MCLE.pair(rep(0.001, 3), LIR.model.C, obs$ni, obs$nj, obs$m, obs$tau, verbose=T)
 
 }
