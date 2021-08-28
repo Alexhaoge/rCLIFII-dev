@@ -11,7 +11,7 @@ LIR.CI(
   tp,
   ...,
   model_args = list(),
-  mtau = Inf,
+  mtau = -1,
   B = 500,
   cl = NULL,
   ncores = -1,
@@ -21,7 +21,10 @@ LIR.CI(
 \arguments{
 \item{theta}{initial value of estimate for MCLE iteration}
 
-\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}}
+\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+a faster built-in function (instead of LIR.model.A/B/C) is used to caculate
+CL. Otherwise, a user-define model should function be given.}
 
 \item{data}{Observation matrix}
 

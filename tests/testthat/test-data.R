@@ -29,13 +29,13 @@ test_that("Simulation C", {
   expect_warning(LIR.simulate.C(Z, N, n, tp, lambda=0.1, mu=0.04, seed = 0))
 })
 
-test_that("Pairwise", {
+test_that("Pairwise and Non-parametric LIR", {
   tp <- c(1:5, 51:55, 101:105, 501:505, 601:605)
-  tau <- c()
+  tauij <- c()
   k <- 1
   for (i in 1:(length(tp)-1)){
     for (j in (i+1):length(tp)){
-      tau[k] <- tp[j] - tp[i]
+      tauij[k] <- tp[j] - tp[i]
       k <- k + 1
     }
   }
@@ -45,5 +45,7 @@ test_that("Pairwise", {
   expect_equal(obs$m, m)
   expect_equal(obs$ni, m)
   expect_equal(obs$nj, m)
+  expect_equal(obs$tauij, tauij)
+  tau <- sort(unique(tauij))
   expect_equal(obs$tau, tau)
 })

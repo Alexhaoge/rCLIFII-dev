@@ -10,11 +10,14 @@ LIR.CL(theta, model, data, tp, model_args, mtau = -1)
 LIR.CL.pair(theta, model, ni, nj, m, tau, model_args)
 }
 \arguments{
-\item{theta}{Parameter to calculate \eqn{\hat{R_{\tau}}}}
+\item{theta}{Parameter to calculate \eqn{\hat{R_{\tau}}}. 1D vector.}
 
-\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
-that takes `theta`, `tau_i`(and other arguments if necessary) and return a
-numeric number}
+\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+CL. Otherwise, a user-define model should function be given and it should
+be a function that takes theta, tau_i(and other arguments in model_args
+if necessary) and return a numeric number}
 
 \item{data}{Observation matrix}
 
@@ -37,14 +40,14 @@ If `mtau` is less than zero, all pairs will be used. Default -1.0.}
 \item{tau}{vector of time interval of lagged identification}
 }
 \value{
-minus Likelihood score(numeric). Inf if theta out of [0,1]
+Likelihood score(numeric). Inf if theta out of [0,1]
 }
 \description{
-This CL function requires a sample format of pairwise lagged identification,
-which is a list-like data containing lagged identification of of all pairs of
-observation. In gerneral cases we should use `LIR.CL` which is implemented
-by C++ with time complexity of \eqn{\Theta(length(tp)^2)}. `LIR.CL.pair`
+`LIR.CL` and `LIR.CL.pair` is the function to calculate composite likelihood
+with a given LIR model. In general cases we should use `LIR.CL` which takes
+observation matrix `data` and time `tp`. `LIR.CL.pair`
 is recommended when total observation time is very small and pairwise lagged
-identification is easy to pre-calculate through `LIR.pairwise()`.
+identification is easy to pre-calculate through `LIR.pairwise()`. Note that
+`LIR.CL.pair` does not support "A"/"B"/"C" for argument `model`.
 The notation of the estimation is \eqn{\hat{R_{\tau}}}.
 }

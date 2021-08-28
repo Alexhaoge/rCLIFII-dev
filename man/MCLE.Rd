@@ -26,7 +26,7 @@ LIR.MCLE(
   data,
   tp,
   model_args = list(),
-  mtau = Inf,
+  mtau = -1,
   lower = 0,
   upper = 1,
   optimizer = NULL,
@@ -37,7 +37,12 @@ LIR.MCLE(
 \arguments{
 \item{theta}{Initial value for parameters to estimate}
 
-\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}}
+\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+CL. Otherwise, a user-define model should function be given and it should
+be a function that takes theta, tau_i(and other arguments in model_args
+if necessary) and return a numeric number}
 
 \item{model_args}{Additional parameters passed to model}
 
@@ -65,11 +70,12 @@ If `mtau` is less than zero, all pairs will be used. Default -1.0.}
 If verbose is TRUE return the full result from optimizer otherwise return MCLE only.
 }
 \description{
-`LIR.MCLE` is for observation matrix input. If number of observation(length(t))
-is less than 20000, pairwise data will be pre-calculated and `LIR.CL.pair`
-will be used. Otherwise pairwise lagged identification will be calculated
-separately at every iteration.
-`LIR.MCLE.pair` is for pairwise list data input.(Deprecated)
+`LIR.MCLE` is for observation matrix input. \\
+`LIR.MCLE.pair` is for pairwise list data input and does not support
+"A"/"B"/"C" for argument `model`.(Deprecated)
+}
+\note{
+`LIR.MCLE.pair` does not support "A"/"B"/"C" for argument `model`.
 }
 \examples{
 # Example of MCLE

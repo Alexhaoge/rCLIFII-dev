@@ -314,7 +314,7 @@ LIR.CI <-
       std <- sqrt(diag(stats::var(t(theta_boot))))
       ci <- rbind(theta - z * std, theta + z * std)
       rownames(ci) <- c('lower', 'upper')
-      colnames(ci) <-
+      colnames(ci) <- names(theta)
       return(ci)
     }
   }

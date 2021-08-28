@@ -12,9 +12,12 @@ LIR.CLhessian.pair(theta, model, grad, hessian, ni, nj, m, tau, model_args)
 \arguments{
 \item{theta}{Parameter to calculate \eqn{\hat{R_{\tau}}}}
 
-\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
-that takes theta, tau_i(and other arguments if necessary) and return a
-numeric number}
+\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+CL. Otherwise, a user-define model should function be given and it should
+be a function that takes theta, tau_i(and other arguments in model_args
+if necessary) and return a numeric number}
 
 \item{grad}{Gradient of the model. Should be a function that takes theta,
 tau_i(and other arguments if necessary) and return a 1D
@@ -45,8 +48,11 @@ If `mtau` is less than zero, all pairs will be used. Default -1.0.}
 \item{tau}{vector of time interval of lagged identification}
 }
 \value{
-A square symmetric matrix with length(theta) rows and columns.
+A square symmetric hessian matrix with length(theta) rows and columns.
 }
 \description{
 Hessian matrix of composite likelihood
+}
+\note{
+`LIR.CLhessian.pair` does not support "A"/"B"/"C" for argument `model`.
 }

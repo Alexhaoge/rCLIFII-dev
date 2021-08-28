@@ -15,7 +15,7 @@ LIR.CLICa(
   tp,
   ...,
   model_args = list(),
-  mtau = Inf,
+  mtau = -1,
   MCLE = FALSE,
   B = 500,
   cl = NULL,
@@ -31,7 +31,7 @@ LIR.CLICb(
   tp,
   ...,
   model_args = list(),
-  mtau = Inf,
+  mtau = -1,
   MCLE = FALSE,
   B = 500,
   cl = NULL,
@@ -43,9 +43,12 @@ LIR.CLICb(
 this is the MCLE, otherwise the initial value for optimizer. Theta is required
 because it is the only parameter that tells the dimension of estimating variable.}
 
-\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Should be a function
-that takes theta, tau_i(and other arguments if necessary) and return a
-numeric number}
+\item{model}{Model to calculate \eqn{\hat{R_{\tau}}}. Only function or "A"/"B"/"C"
+are allowed. "A"/"B"/"C" is recommended for LIR model A/B/C, in this case
+a faster built-in function (instead of LIR.model.A/B/C) is used to calculate
+CL. Otherwise, a user-define model should function be given and it should
+be a function that takes theta, tau_i (and other arguments in model_args
+if necessary) and return a numeric number.}
 
 \item{grad}{Gradient of the model. Should be a function that takes theta,
 tau_i(and other arguments if necessary) and return a 1D

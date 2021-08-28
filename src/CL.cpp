@@ -109,12 +109,19 @@ Rcpp::NumericMatrix LIR_Hessian(
  * CL with built-in models
  *******************************/
 
+char get_model_type(const Rcpp::String &model) {
+    char _model = model.get_cstring()[0];
+    if(_model >= 'a'&& _model <= 'z')   _model -= 32;
+    else if(_model >= 'A'&& _model <= 'Z')  _model += 32;
+    return _model;
+}
+
 double LIR_model_builtin(const char &model, const Rcpp::NumericVector &theta, const double &tau) {
     switch (model) {
     case 'A':   return theta[0]; break;
     case 'B':   return theta[0] * exp(-theta[1] * tau); break;
     case 'C':   return theta[0] * exp(-theta[1] * tau) + theta[2]; break;
-    default:    throw std::invalid_argument("Unsupported model, only\
+    default:    throw std::invalid_argument("Unsupported built-in model, only\
                                             \"A\"/\"B\"/\"C\" are allowed.");
     }
 }
@@ -122,13 +129,13 @@ double LIR_model_builtin(const char &model, const Rcpp::NumericVector &theta, co
 void LIR_model_grad_builtin(const char &model, const Rcpp::NumericVector &theta, const double &tau, Rcpp::NumericVector &grad) {
     switch (model) {
     case 'A':   grad[0] = 1; break;
-    case 'B':   
+    case 'B':
         grad[0] = exp(-theta[1]*tau), grad[1] = -theta[0] * tau * grad[0];
         break;
-    case 'C':   
+    case 'C':
         grad[0] = exp(-theta[1]*tau), grad[1] = -theta[0] * tau * grad[0], grad[2] = 1;
         break;
-    default:    throw std::invalid_argument("Unsupported model, only\
+    default:    throw std::invalid_argument("Unsupported built-in model, only\
                                             \"A\"/\"B\"/\"C\" are allowed.");
     }
 }
@@ -144,17 +151,18 @@ void LIR_model_hessian_builtin(const char &model, const Rcpp::NumericVector &the
         hessian(0, 1) = hessian(1, 0) = -tau * exp(-theta[1]*tau);
         hessian(1, 1) = -tau * theta[0] * hessian(0, 1);
         break;
-    default:    throw std::invalid_argument("Unsupported model, only\
+    default:    throw std::invalid_argument("Unsupported built-in model, only\
                                             \"A\"/\"B\"/\"C\" are allowed.");
     }
 }
 
 
 // Built-in function for CL, use Cpp function for model directly
+// [[Rcpp::export]]
 double LIR_CL_builtin(const Rcpp::NumericVector &theta, const Rcpp::String &model,
     const Rcpp::NumericMatrix &data, const Rcpp::NumericVector &tp, const double &mtau = -1.0)
 {
-    char _model = model.get_cstring()[0];
+    char _model = get_model_type(model);
     int N = data.nrow(), T = data.ncol();
     int* n = (int*)malloc(sizeof(int) * T);
     for (int j = 0, i; j < T; j++)
@@ -178,12 +186,13 @@ double LIR_CL_builtin(const Rcpp::NumericVector &theta, const Rcpp::String &mode
     return cl;
 }
 
+// [[Rcpp::export]]
 Rcpp::NumericVector LIR_grad_builtin(
     Rcpp::NumericVector theta, Rcpp::String model,
     Rcpp::NumericMatrix data, Rcpp::NumericVector tp,
     Rcpp::List model_args, double mtau = -1.0)
 {
-    char _model = model.get_cstring()[0];
+    char _model = get_model_type(model);
     int N = data.nrow(), T = data.ncol();
     int* n = (int*)malloc(sizeof(int) * T);
     for (int j = 0, i; j < T; j++)
@@ -208,12 +217,13 @@ Rcpp::NumericVector LIR_grad_builtin(
     return cl_grad;
 }
 
+// [[Rcpp::export]]
 Rcpp::NumericMatrix LIR_Hessian_builtin(
     const Rcpp::NumericVector &theta, const Rcpp::String &model,
     const Rcpp::NumericMatrix &data, const Rcpp::NumericVector &tp,
     const Rcpp::List &model_args, const double &mtau = -1.0)
 {
-    char _model = model.get_cstring()[0];
+    char _model = get_model_type(model);
     int N = data.nrow(), T = data.ncol();
     int* n = (int*)malloc(sizeof(int) * T);
     for (int j = 0, i; j < T; j++)

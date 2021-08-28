@@ -130,7 +130,7 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
 #' Calculate lagged identification of each observation pair.
 #' Number of observation is the column number of input matrix.
 #' Non-parametric estimate of LIR:
-#' \deqn{\hat{R}(\tau)=\frac{\sum_{i,j|(tp_j-tp_i)=\tau}m_{ij}}{\sum_{i,j|(tp_j-tp_i)=\tau}n_i n_j}
+#' \deqn{\hat{R}(\tau)=\frac{\sum_{i,j|(tp_j-tp_i)=\tau}m_{ij}}{\sum_{i,j|(tp_j-tp_i)=\tau}n_i n_j}}
 #'
 #' @param data Matrix of identification with row number equal to population
 #'   and column number equal to observation.
@@ -152,6 +152,7 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
 #' @examples
 LIR.pairwise <- function(data, tp = NULL, mtau = Inf) {
   lent <- length(tp)
+  n <- colSums(data)
   tp <- sort(tp)
   if (ncol(data) != lent)
     stop("Number of data columns does not match with length of t")

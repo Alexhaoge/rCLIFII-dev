@@ -10,7 +10,7 @@
     return(2 * mcle$value)
   }
 }
-.LIR.XIC <- function(theta, model, data, tp, ..., model_args = list(), mtau = Inf, MCLE = FALSE) {
+.LIR.XIC <- function(theta, model, data, tp, ..., model_args = list(), mtau = -1, MCLE = FALSE) {
   if (length(tp) != ncol(data))
     stop("Number of observation not match")
   if (MCLE) {
@@ -83,13 +83,13 @@ LIR.AIC.pair <- function(theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 
 #' @rdname AICBICQAIC
 #' @export
-LIR.AIC <- function(theta, model, data, tp, ..., model_args=list(), mtau=Inf, MCLE = FALSE) {
+LIR.AIC <- function(theta, model, data, tp, ..., model_args=list(), mtau=-1, MCLE = FALSE) {
   return(.LIR.XIC(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, MCLE = MCLE) + 2 * length(theta))
 }
 
 #' @rdname AICBICQAIC
 #' @export
-LIR.BIC <- function(theta, model, data, tp, ..., model_args=list(), mtau=Inf, MCLE = FALSE) {
+LIR.BIC <- function(theta, model, data, tp, ..., model_args=list(), mtau=-1, MCLE = FALSE) {
   return(.LIR.XIC.pair(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, MCLE=MCLE) + length(theta) * log(ncol(data)))
 }
 
@@ -121,7 +121,7 @@ LIR.QAIC.pair <- function(c, theta, model, ni, nj, m, tau, ..., MCLE = FALSE) {
 
 #' @rdname AICBICQAIC
 #' @export
-LIR.QAIC <- function(c, theta, model, data, tp, ..., model_args=list(), mtau=Inf, MCLE = FALSE) {
+LIR.QAIC <- function(c, theta, model, data, tp, ..., model_args=list(), mtau=-1, MCLE = FALSE) {
   # NOTE: df需要使用参数最多的
   cl <- .LIR.XIC(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, MCLE = MCLE)
   return(cl / c + 2 * length(theta))
@@ -133,8 +133,7 @@ LIR.QAIC <- function(c, theta, model, data, tp, ..., model_args=list(), mtau=Inf
 # Base function for LIR.CLICa and LIR.CLICb. Should not export
 .LIR.CLICbase <-
   function(theta, model, grad, hessian, data, tp,
-           ...,
-           model_args = list(), mtau = Inf,
+           ..., model_args = list(), mtau = -1,
            MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
     if (!(is.function(model) && is.function(grad) && is.function(hessian)) && !is.character(model))
       stop('Only function or "A"/"B"/"C" is allowed for argument model')
@@ -226,7 +225,7 @@ LIR.QAIC <- function(c, theta, model, data, tp, ..., model_args=list(), mtau=Inf
 #'
 #' @example
 LIR.CLICa <-
-  function(theta, model, grad, hessian, data, tp, ..., model_args = list(), mtau = Inf, MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
+  function(theta, model, grad, hessian, data, tp, ..., model_args = list(), mtau = -1, MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
     tmp <- .LIR.CLICbase(theta, model, grad, hessian, data, tp, ...,
       model_args = model_args, mtau = mtau, MCLE = MCLE, B = B, cl = cl, ncores = ncores)
     return(tmp[1] + 2 * tmp[2])
@@ -235,7 +234,7 @@ LIR.CLICa <-
 #' @rdname CLIC
 #' @export
 LIR.CLICb <-
-  function(theta, model, grad, hessian, data, tp, ..., model_args = list(), mtau = Inf, MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
+  function(theta, model, grad, hessian, data, tp, ..., model_args = list(), mtau = -1, MCLE = FALSE, B = 500, cl = NULL, ncores = -1) {
     tmp <- .LIR.CLICbase(theta, model, grad, hessian, data, tp, ...,
         model_args = model_args, mtau = mtau, MCLE = MCLE,
         B = B, cl = cl, ncores = ncores)
@@ -313,80 +312,62 @@ LIR.CLICb <-
 #' # [1] 0.007119308 0.212260232 0.003582160
 #'
 LIR.modelSelect <-
-  function(data, tp,
-           theta_list = list(rep(0.1, 1), rep(0.001, 2), rep(0.001, 3)),
-           model_list = list('A', 'B', 'C'), criterion = 'CLICa',
-           ...,
-           model_args = list(), mtau = Inf,
-           MCLE = FALSE,
-           B = 500, cl = NULL, ncores = -1,
-           verbose = TRUE) {
+  function(data, tp, theta_list = list(rep(0.1, 1), rep(0.001, 2), rep(0.001, 3)),
+           model_list = list('A', 'B', 'C'), criterion = 'CLICa', ...,
+           model_args = list(), mtau = -1, MCLE = FALSE,
+           B = 500, cl = NULL, ncores = -1, verbose = TRUE) {
     lenf <- length(model_list)
     if (lenf != length(theta_list))
       stop("Theta list should have same length with model_list")
-
     score <- c()
-    if (criterion %in% c('AIC', 'QAIC')) {
+    # uppercase criterion to avoid typo
+    # below here all CLICa/b will turn to CLICA/B
+    if (is.character(criterion))  criterion <- toupper(criterion)
+      else stop("Criterion must be a character string")
+    # Check criterions
+    if (criterion %in% c('AIC', 'BIC', 'QAIC')) {
+      # Get VIF for QAIC
       if (criterion == 'QAIC')
         c_hat = LIR.chat(data, tp, max(sapply(theta_list, length)), mtau)
+      # Get score
       for(i in 1:lenf) {
-          score[i] <- LIR.AIC(theta_list[[i]], as.function(fun_list[[i]]), data, tp, ..., mtau=mtau, MCLE=MCLE)
+        # Check model
+        model_i = model_list[[i]]
+        if (is.vector(model_i)) model_i = model_i[[1]]
+        if (!is.function(model_i) && !is.character(model_i))
+          stop('Only function or "A"/"B"/"C" is allowed for argument model')
+        # Branches for different criterions
+        if (criterion == 'AIC')
+          score[i] <- LIR.AIC(theta_list[[i]], model_i, data, tp, ..., mtau=mtau, MCLE=MCLE)
+        else if (criterion == 'BIC')
+          score[i] <- LIR.BIC(theta_list[[i]], model_i, data, tp, ..., mtau=mtau, MCLE=MCLE)
+        else
+          score[i] <- LIR.QAIC(c_hat, theta_list[[i]], model_i, data, tp, ..., mtau=mtau, MCLE=MCLE)
       }
-    } else if (criterion %in% c('CLICa', 'CLICb')) {
-      if (lenf != length(grad_list) || lenf != length(hessian_list))
-        stop("Gradient list and Hessian list must be equal length with model list")
+    } else if (criterion %in% c('CLICA', 'CLICB')) {
+      # Get score
       for (i in 1:lenf) {
-        if (grad_list[i] == 'A')
-          grad_list[[i]] <- as.list(LIR.grad.A)
-        else if (grad_list[i] == 'B')
-          grad_list[[i]] <- as.list(LIR.grad.B)
-        else if (grad_list[i] == 'C')
-          grad_list[[i]] <- as.list(LIR.grad.C)
-        else if ('try-error' %in% class(try(as.function(grad_list[i]))))
-          stop('Only "A", "B", "C" or function is valid to be in `grad_list`')
-        if (hessian_list[i] == 'A')
-          hessian_list[[i]] <- as.list(LIR.hessian.A)
-        else if (hessian_list[i] == 'B')
-          hessian_list[[i]] <- as.list(LIR.hessian.B)
-        else if (hessian_list[i] == 'C')
-          hessian_list[[i]] <- as.list(LIR.hessian.C)
-        else if ('try-error' %in% class(try(as.function(hessian_list[i]))))
-          stop('Only "A", "B", "C" or function is valid to be in `hessian_list`')
-      }
-      if (criterion == 'CLICa') {
-        for (i in 1:lenf) {
-          score[i] <-
-            LIR.CLICa(
-              theta_list[[i]],
-              as.function(fun_list[[i]]),
-              as.function(grad_list[[i]]),
-              as.function(hessian_list[[i]]),
-              data,
-              tp,
-              ...,
-              MCLE = MCLE,
-              B = B,
-              cl = cl,
-              ncores = ncores
-            )
+        # Check model
+        if (is.character(model_list[[i]])) {
+          model_i = grad_i = hessian_i = toupper(model_list[[i]])
+          if (!(model_i %in% c('A', 'B', 'C')))
+            stop('Only \"A"/"B"/"C" is allowed for built-in model')
+        } else if (is.vector(model_list[[i]])) {
+          model_i = model_list[[i]][[1]]
+          grad_i = model_list[[i]][[2]]
+          hessian_i = model_list[[i]][[3]]
+          if (!is.function(model_i) || !is.function(grad_i) || !is.function(hessian_i))
+            stop("A vector of function (model, gradient, hessian) must be provided for
+                 user-defined model under CILCa/b criterion.")
         }
-      } else {
-        for (i in 1:lenf) {
-          score[i] <-
-            LIR.CLICb(
-              theta_list[[i]],
-              as.function(fun_list[[i]]),
-              as.function(grad_list[[i]]),
-              as.function(hessian_list[[i]]),
-              data,
-              tp,
-              ...,
-              MCLE = MCLE,
-              B = B,
-              cl = cl,
-              ncores = ncores
-            )
-        }
+        if (criterion == 'CLICA')
+          score[i] <- LIR.CLICa(theta_list[[i]], model_i, grad_i, hessian_i,
+                                data, tp, ..., MCLE = MCLE, B = B, cl = cl,
+                                ncores = ncores)
+        else
+          score[i] <- LIR.CLICb(theta_list[[i]], model_i, grad_i, hessian_i,
+                                data, tp, ..., MCLE = MCLE, B = B, cl = cl,
+                                ncores = ncores)
       }
     } else {
       stop('Unsupport criterion, only AIC,BIC, QAIC, CLICa, CLICb is allowed')
@@ -395,7 +376,7 @@ LIR.modelSelect <-
     if (verbose) {
       if (!MCLE)
         theta <-
-          LIR.MCLE(theta_list[[best_idx]], as.function(fun_list[[best_idx]]), data, tp, ..., verbose = FALSE)
+          LIR.MCLE(theta_list[[best_idx]], model_list[[best_idx]], data, tp, ..., mtau=mtau, verbose = FALSE)
       return(
         list(
           best = model_list[[best_idx]],

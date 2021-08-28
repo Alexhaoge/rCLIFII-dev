@@ -27,5 +27,8 @@ List of lagged identification pair and non-parametric estimate of LIR.
 }
 }
 \description{
-
+Calculate lagged identification of each observation pair.
+Number of observation is the column number of input matrix.
+Non-parametric estimate of LIR:
+\deqn{\hat{R}(\tau)=\frac{\sum_{i,j|(tp_j-tp_i)=\tau}m_{ij}}{\sum_{i,j|(tp_j-tp_i)=\tau}n_i n_j}}
 }

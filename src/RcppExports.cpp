@@ -61,6 +61,53 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// LIR_CL_builtin
+double LIR_CL_builtin(const Rcpp::NumericVector& theta, const Rcpp::String& model, const Rcpp::NumericMatrix& data, const Rcpp::NumericVector& tp, const double& mtau);
+RcppExport SEXP _rCLIFII_LIR_CL_builtin(SEXP thetaSEXP, SEXP modelSEXP, SEXP dataSEXP, SEXP tpSEXP, SEXP mtauSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type tp(tpSEXP);
+    Rcpp::traits::input_parameter< const double& >::type mtau(mtauSEXP);
+    rcpp_result_gen = Rcpp::wrap(LIR_CL_builtin(theta, model, data, tp, mtau));
+    return rcpp_result_gen;
+END_RCPP
+}
+// LIR_grad_builtin
+Rcpp::NumericVector LIR_grad_builtin(Rcpp::NumericVector theta, Rcpp::String model, Rcpp::NumericMatrix data, Rcpp::NumericVector tp, Rcpp::List model_args, double mtau);
+RcppExport SEXP _rCLIFII_LIR_grad_builtin(SEXP thetaSEXP, SEXP modelSEXP, SEXP dataSEXP, SEXP tpSEXP, SEXP model_argsSEXP, SEXP mtauSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::String >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type tp(tpSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type model_args(model_argsSEXP);
+    Rcpp::traits::input_parameter< double >::type mtau(mtauSEXP);
+    rcpp_result_gen = Rcpp::wrap(LIR_grad_builtin(theta, model, data, tp, model_args, mtau));
+    return rcpp_result_gen;
+END_RCPP
+}
+// LIR_Hessian_builtin
+Rcpp::NumericMatrix LIR_Hessian_builtin(const Rcpp::NumericVector& theta, const Rcpp::String& model, const Rcpp::NumericMatrix& data, const Rcpp::NumericVector& tp, const Rcpp::List& model_args, const double& mtau);
+RcppExport SEXP _rCLIFII_LIR_Hessian_builtin(SEXP thetaSEXP, SEXP modelSEXP, SEXP dataSEXP, SEXP tpSEXP, SEXP model_argsSEXP, SEXP mtauSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type tp(tpSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type model_args(model_argsSEXP);
+    Rcpp::traits::input_parameter< const double& >::type mtau(mtauSEXP);
+    rcpp_result_gen = Rcpp::wrap(LIR_Hessian_builtin(theta, model, data, tp, model_args, mtau));
+    return rcpp_result_gen;
+END_RCPP
+}
 // LIR_chat
 double LIR_chat(Rcpp::NumericMatrix data, Rcpp::NumericVector tp, double k, double mtau);
 RcppExport SEXP _rCLIFII_LIR_chat(SEXP dataSEXP, SEXP tpSEXP, SEXP kSEXP, SEXP mtauSEXP) {
@@ -80,6 +127,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCLIFII_LIR_CL", (DL_FUNC) &_rCLIFII_LIR_CL, 6},
     {"_rCLIFII_LIR_Grad", (DL_FUNC) &_rCLIFII_LIR_Grad, 7},
     {"_rCLIFII_LIR_Hessian", (DL_FUNC) &_rCLIFII_LIR_Hessian, 8},
+    {"_rCLIFII_LIR_CL_builtin", (DL_FUNC) &_rCLIFII_LIR_CL_builtin, 5},
+    {"_rCLIFII_LIR_grad_builtin", (DL_FUNC) &_rCLIFII_LIR_grad_builtin, 6},
+    {"_rCLIFII_LIR_Hessian_builtin", (DL_FUNC) &_rCLIFII_LIR_Hessian_builtin, 6},
     {"_rCLIFII_LIR_chat", (DL_FUNC) &_rCLIFII_LIR_chat, 4},
     {NULL, NULL, 0}
 };

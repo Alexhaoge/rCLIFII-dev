@@ -19,6 +19,18 @@ LIR.CLhessian <- function(theta, model, grad, hessian, data, tp, model_args, mta
     .Call(`_rCLIFII_LIR_Hessian`, theta, model, grad, hessian, data, tp, model_args, mtau)
 }
 
+LIR_CL_builtin <- function(theta, model, data, tp, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_CL_builtin`, theta, model, data, tp, mtau)
+}
+
+LIR_grad_builtin <- function(theta, model, data, tp, model_args, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_grad_builtin`, theta, model, data, tp, model_args, mtau)
+}
+
+LIR_Hessian_builtin <- function(theta, model, data, tp, model_args, mtau = -1.0) {
+    .Call(`_rCLIFII_LIR_Hessian_builtin`, theta, model, data, tp, model_args, mtau)
+}
+
 #' Function for VIF(Variance Inflation Factor) in QAIC
 #' 
 #' @description

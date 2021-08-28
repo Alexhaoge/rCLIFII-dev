@@ -9,12 +9,10 @@ LIR.modelSelect(
   tp,
   theta_list = list(rep(0.1, 1), rep(0.001, 2), rep(0.001, 3)),
   model_list = list("A", "B", "C"),
-  grad_list = list("A", "B", "C"),
-  hessian_list = list("A", "B", "C"),
   criterion = "CLICa",
   ...,
   model_args = list(),
-  mtau = Inf,
+  mtau = -1,
   MCLE = FALSE,
   B = 500,
   cl = NULL,
@@ -32,20 +30,13 @@ correspond to `model_list`. If param `MCLE` is TRUE,
 this is the MCLE, otherwise the initial value for optimizer. Theta is required
 because it is the only parameter that tells the dimension of estimating variable.}
 
-\item{model_list}{List of candidate models, default list('A', 'B', 'C').
-Only `as.list(function)` or 'A'/'B'/'C' is accepted.'A', 'B', 'C' are
-package's built-in models and will be replaced by `LIR.model.A`,
-`LIR.model.B`, `LIR.model.B`, respectively.}
-
-\item{grad_list}{List of gradients correspond to candidate models.
-Only function or 'A'/'B'/'C' is accepted.'A', 'B', 'C' are package's built-in
-models and will be replaced by `LIR.grad.A`, `LIR.grad.B`, `LIR.grad.B`, respectively.
-Only required for CLICa/CLICb. Default list('A', 'B', 'C').}
-
-\item{hessian_list}{List of Hessian correspond to candidate models.
-Only function or 'A'/'B'/'C' is accepted.'A', 'B', 'C' will be replaced by
-`LIR.hessian.A`, `LIR.hessian.B`, `LIR.hessian.B`, respectively.
-Only required for CLICa/CLICb. Default list('A', 'B', 'C').}
+\item{model_list}{List of candidate models, each element of this list should
+be 'A', 'B', 'C', a function, or a vector of three function.
+If it is 'A'/'B'/'C' then built-in model A/B/C will be used. If the criterion
+is CLICa/b, then user-defined model must be a vector of three function, function
+to calculate LIR \eqn{R_{\tau}}, gradient of \eqn{R_{\tau}} and Hessian matrix
+of \eqn{R_{\tau}}. If the criterion is AIC/BIC/QAIC, gradients and Hessian matrix
+is not needed and user-defined model could be a single function. Default list('A', 'B', 'C').}
 
 \item{criterion}{Model selection criterion. Should be one of 'AIC', 'BIC',
 'QAIC', 'CLICa' and 'CLICb'.}
@@ -67,8 +58,8 @@ the initial value for optimizer. Boolean, default FALSE.}
 will be created by @seealso [makeCluster()] and closed after function finished.
 If not NULL, the function will use the given cluster and will not close it.}
 
-\item{ncores}{Number of processors to use. Default -1(which means all available cores).
-This argument will be suppressed if cl is not NULL.}
+\item{ncores}{Number of processors to use. Default -1 (which means all
+available cores). This argument will be suppressed if cl is not NULL.}
 
 \item{verbose}{Whether return verbose output. Default TRUE.}
 }
@@ -91,9 +82,8 @@ score of each model with the given criterion and select the model with highest
 score as the best one.
 }
 \note{
-User-defined functions in `model_list`, `grad_list`, `hessian_list` must be passed
-as a list using as.list(function) and when iterate through model_list,
-list format user-defined function will be convert to function by as.function(list)
+`theta_list` must be correspond to `model_list`. Compactbility between
+theta and LIR models will not be examined.
 }
 \examples{
 # Example of model selection
