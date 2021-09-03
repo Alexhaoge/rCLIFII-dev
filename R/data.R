@@ -117,6 +117,10 @@ LIR.simulate.C <- function(Z, N, n, tp, lambda, mu, seed = NULL) {
     pop_in <- pop_in_new
     pop_out <- pop_out_new
     if (i == tp[j]) {
+      if (length(pop_in) < n[j])
+        stop(paste("Number of individual observed too much at time",
+                   i, "there are", length(pop_in),
+                   "individuals inside, but got n", n[j]))
       data[sample(pop_in, n[j]), j] <- 1
       j <- j + 1
       if (j > lent) break
