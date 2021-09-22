@@ -13,3 +13,5 @@ or download source file and install locally
 ```R
 devtools::install_github('path/to/rCLIFII.tar.gz')
 ```
+## Documentation
+[R package manual](./rCLIFII_0.1.0.pdf)
