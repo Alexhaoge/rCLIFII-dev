@@ -3,14 +3,27 @@
 #include <cmath>
 #define CL_INF 9e12
 
+double LIR_CL_builtin(const Rcpp::NumericVector &theta,
+                      const Rcpp::String &model,
+                      const Rcpp::NumericMatrix &data,
+                      const Rcpp::NumericVector &tp,
+                      const double &mtau = -1.0);
+
 //' @export
 //' @rdname CL
 // [[Rcpp::export(LIR.CL)]]
 double LIR_CL(
-    const Rcpp::NumericVector &theta, const Rcpp::Function &model,
+    const Rcpp::NumericVector &theta, const Rcpp::RObject &model,
     const Rcpp::NumericMatrix &data, const Rcpp::NumericVector &tp,
     const Rcpp::List &model_args, const double &mtau = -1.0)
 {
+    if (Rcpp::is<Rcpp::String>(model))
+        return LIR_CL_builtin(theta, Rcpp::as<Rcpp::String>(model),
+                              data, tp, mtau);
+    else if (!Rcpp::is<Rcpp::Function>(model))
+        throw std::invalid_argument("Unsupported built-in model, only\
+                                    \"A\"/\"B\"/\"C\" are allowed.");
+    Rcpp::Function _model = Rcpp::as<Rcpp::Function>(model);
     int N = data.nrow(), T = data.ncol();
     int* n = (int*)malloc(sizeof(int) * T);
     for (int j = 0, i; j < T; j++)
@@ -24,9 +37,10 @@ double LIR_CL(
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
-                double nR_tau = n[j] * (*REAL(model(theta, tau, Rcpp::Named("model_args", model_args))));
+                double nR_tau = n[j] * (*REAL(_model(theta, tau, Rcpp::Named("model_args", model_args))));
+                // Rcpp::Rcout << m << " " << n[i] << " " << n[j] << "\n";
                 if (nR_tau <= 0 || nR_tau >= 1) return -CL_INF;
                 cl += m * log(nR_tau) + (n[i] - m) * log(1 - nR_tau);
             }
@@ -57,7 +71,7 @@ Rcpp::NumericVector LIR_Grad(
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
                 R_tau = *REAL(model(theta, Rcpp::Named("model_args", model_args)));
                 R_tau_grad = Rcpp::as<Rcpp::NumericVector>(grad(theta, tau, Rcpp::Named("model_args", model_args)));
@@ -91,7 +105,7 @@ Rcpp::NumericMatrix LIR_Hessian(
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
                 R_tau = *REAL(model(theta, Named("model_args", model_args)));
                 R_tau_grad = Rcpp::as<Rcpp::NumericVector>(grad(theta, tau, Rcpp::Named("model_args", model_args)));
@@ -112,7 +126,6 @@ Rcpp::NumericMatrix LIR_Hessian(
 char get_model_type(const Rcpp::String &model) {
     char _model = model.get_cstring()[0];
     if(_model >= 'a'&& _model <= 'z')   _model -= 32;
-    else if(_model >= 'A'&& _model <= 'Z')  _model += 32;
     return _model;
 }
 
@@ -160,7 +173,7 @@ void LIR_model_hessian_builtin(const char &model, const Rcpp::NumericVector &the
 // Built-in function for CL, use Cpp function for model directly
 // [[Rcpp::export]]
 double LIR_CL_builtin(const Rcpp::NumericVector &theta, const Rcpp::String &model,
-    const Rcpp::NumericMatrix &data, const Rcpp::NumericVector &tp, const double &mtau = -1.0)
+    const Rcpp::NumericMatrix &data, const Rcpp::NumericVector &tp, const double &mtau)
 {
     char _model = get_model_type(model);
     int N = data.nrow(), T = data.ncol();
@@ -176,10 +189,11 @@ double LIR_CL_builtin(const Rcpp::NumericVector &theta, const Rcpp::String &mode
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
-                nR_tau = LIR_model_builtin(_model, theta, tau);
+                nR_tau = n[j] * LIR_model_builtin(_model, theta, tau);
                 if (nR_tau <= 0 || nR_tau >= 1) return -CL_INF;
+                // Rcpp::Rcout <<  m * log(nR_tau) + (n[i] - m) * log(1 - nR_tau) << ' ';
                 cl += m * log(nR_tau) + (n[i] - m) * log(1 - nR_tau);
             }
         }
@@ -207,7 +221,7 @@ Rcpp::NumericVector LIR_grad_builtin(
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
                 R_tau = LIR_model_builtin(_model, theta, tau);
                 LIR_model_grad_builtin(_model, theta, tau, R_tau_grad);
@@ -239,7 +253,7 @@ Rcpp::NumericMatrix LIR_Hessian_builtin(
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
                 R_tau = LIR_model_builtin(_model, theta, tau);
                 LIR_model_grad_builtin(_model, theta, tau, R_tau_grad);

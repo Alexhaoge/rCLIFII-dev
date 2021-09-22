@@ -2,10 +2,10 @@
 #include <algorithm>
 
 //' Function for VIF(Variance Inflation Factor) in QAIC
-//' 
+//'
 //' @description
 //' \deqn{\hat{c}=\chi^2/df=\sum_{i,\tau}\frac{(m_{t_i,t_i+\tau}-E(m_{t_i,t_i+\tau}))^2}{E(m_{t_i,t_i+\tau})}/(unique(\tau)-k-1)}
-//' 
+//'
 //' @note This function has memory complexity of O(N^2) and may suffer from out-of-memory
 //' error if observation number is very large.
 //'
@@ -24,7 +24,7 @@ double LIR_chat(Rcpp::NumericMatrix data, Rcpp::NumericVector tp, double k, doub
     // It is designed to avoid record all pairwise `m` into different `tau` categories,
     // which is O(N^2) in space. Still using tau_map for bin count of tau would be
     // O(N^2) in the worst case. Is there any better solution with O(N) space comlexity?
-    // Maybe the best 
+    // Maybe the best
     std::map<double, int> tau_map, cat_map;
     tau_map.clear(), cat_map.clear();
     int N = data.nrow(), T = data.ncol();
@@ -66,7 +66,7 @@ double LIR_chat(Rcpp::NumericMatrix data, Rcpp::NumericVector tp, double k, doub
             if (mtau < 0 || tau <= mtau) {
                 m = 0;
                 for (int k = 0; k < N; k++)
-                    if (data(i, k) == data(j, k) && data(i, k) > 0)
+                    if (data(k, i) == data(k, j) && data(k, i) > 0)
                         m += 1;
                 if (mean.find(tau) == mean.end()) {
                     mean[tau] = m, var[tau] = 0.0;

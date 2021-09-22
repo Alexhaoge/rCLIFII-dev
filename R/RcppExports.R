@@ -19,7 +19,7 @@ LIR.CLhessian <- function(theta, model, grad, hessian, data, tp, model_args, mta
     .Call(`_rCLIFII_LIR_Hessian`, theta, model, grad, hessian, data, tp, model_args, mtau)
 }
 
-LIR_CL_builtin <- function(theta, model, data, tp, mtau = -1.0) {
+LIR_CL_builtin <- function(theta, model, data, tp, mtau) {
     .Call(`_rCLIFII_LIR_CL_builtin`, theta, model, data, tp, mtau)
 }
 
@@ -32,10 +32,10 @@ LIR_Hessian_builtin <- function(theta, model, data, tp, model_args, mtau = -1.0)
 }
 
 #' Function for VIF(Variance Inflation Factor) in QAIC
-#' 
+#'
 #' @description
 #' \deqn{\hat{c}=\chi^2/df=\sum_{i,\tau}\frac{(m_{t_i,t_i+\tau}-E(m_{t_i,t_i+\tau}))^2}{E(m_{t_i,t_i+\tau})}/(unique(\tau)-k-1)}
-#' 
+#'
 #' @note This function has memory complexity of O(N^2) and may suffer from out-of-memory
 #' error if observation number is very large.
 #'

@@ -86,3 +86,5 @@ test_that("LIR bootstrap", {
   boot <- LIR.bootstrap(ds, seed)
   expect_equal(boot, ds[boot_row, ])
 })
+
+rm(ds)

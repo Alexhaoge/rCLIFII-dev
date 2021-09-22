@@ -11,13 +11,13 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // LIR_CL
-double LIR_CL(const Rcpp::NumericVector& theta, const Rcpp::Function& model, const Rcpp::NumericMatrix& data, const Rcpp::NumericVector& tp, const Rcpp::List& model_args, const double& mtau);
+double LIR_CL(const Rcpp::NumericVector& theta, const Rcpp::RObject& model, const Rcpp::NumericMatrix& data, const Rcpp::NumericVector& tp, const Rcpp::List& model_args, const double& mtau);
 RcppExport SEXP _rCLIFII_LIR_CL(SEXP thetaSEXP, SEXP modelSEXP, SEXP dataSEXP, SEXP tpSEXP, SEXP model_argsSEXP, SEXP mtauSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RObject& >::type model(modelSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type tp(tpSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type model_args(model_argsSEXP);
