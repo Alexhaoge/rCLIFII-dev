@@ -230,7 +230,7 @@ LIR.MCLE <-
         opt_res <- stats::optim(par = theta, fn = clf, method = 'Brent',
             lower = lower, upper = upper, control = opt_arg)
       else
-        opt_res <- stats::optim(par = theta, fn = clf, control = opt_arg)
+        opt_res <- stats::optim(par = theta, fn = clf, lower = lower, upper = upper, control = opt_arg)
     } else {
       opt_res <- optimizer(theta, clf, lower = lower, upper = upper, control = opt_arg)
     }
@@ -287,6 +287,7 @@ LIR.CI <-
     B <- as.integer(B)
     if (B <= 1)
       stop("B must be a positive integer bigger than 1")
+
     clusterNotGiven <- FALSE
     if (base::is.null(cl)) {
       clusterNotGiven <- TRUE
@@ -298,12 +299,15 @@ LIR.CI <-
     } else if (!base::is(cl, 'cluster')) {
       stop('cl must be a cluster')
     }
+
     theta <- LIR.MCLE(theta, model, data, tp, ..., model_args=model_args, mtau=mtau, verbose = FALSE)
     theta_boot <- parallel::parSapply(cl, 1:B, function(id) {
       data_bootstrap <- LIR.bootstrap(data)
       return(LIR.MCLE(theta, model, data_bootstrap, tp, ..., model_args=model_args, mtau=mtau, verbose = FALSE))
     })
+
     if (clusterNotGiven) parallel::stopCluster(cl)
+
     if (!base::is.numeric(alpha) || alpha <= 0 || alpha >= 1)
       stop("Confidence level should between 0 and 1(exclusive), usually a small value like 0.05")
     z <- stats::qnorm(1 - alpha / 2)
