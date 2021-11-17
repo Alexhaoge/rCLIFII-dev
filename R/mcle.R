@@ -156,7 +156,7 @@ LIR.MCLE.pair <-
           stats::optim(par = theta, fn = clf, method = 'Brent',
             lower = lower, upper = upper, control = opt_arg)
       else
-        opt_res <- stats::optim(par = theta, fn = clf, control = opt_arg)
+        opt_res <- stats::optim(par = theta, fn = clf, method = "SANN", control = opt_arg)
     } else {
       opt_res <- optimizer(theta, clf, lower = lower, upper = upper, control = opt_arg)
     }

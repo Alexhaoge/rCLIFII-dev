@@ -1,7 +1,7 @@
 Package: rCLIFII
 Type: Package
 Title: Composite Likelihood Inference For Individual Identification
-Version: 0.1.0
+Version: 0.0.0.9001
 Author: Xueli Xu, Zhihao Lyu, Ximing Xu
 Author@R: c(
   person("Xueli", "Xu", rol = "aut"),
@@ -30,4 +30,4 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 
-    R (>= 2.10)
+    R (>= 3.0)
